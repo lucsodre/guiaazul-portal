@@ -108,7 +108,7 @@
     <main class="container">
       <article class="card">
         <h1>Politica de Privacidade - Guia Azul</h1>
-        <p class="muted">Ultima atualizacao: 2026-04-26</p>
+        <p class="muted">Ultima atualizacao: 2026-05-04</p>
 
         <p>
           Esta Politica de Privacidade descreve como o Guia Azul coleta, usa, compartilha e protege dados pessoais dos usuarios.
@@ -151,22 +151,54 @@
           Podemos compartilhar dados com operadores e prestadores de servico que apoiam a operacao do app, incluindo:
         </p>
         <ul>
-          <li>infraestrutura de backend e autenticacao</li>
-          <li>provedor de IA (OpenAI), para processar mensagens enviadas no recurso de assistente e para transcricao de audio em texto via recurso de entrada por voz (Whisper)</li>
+          <li>infraestrutura de backend e autenticacao (Supabase)</li>
+          <li>provedor de IA (OpenAI) — detalhado na secao 5 abaixo</li>
         </ul>
         <p>Nao vendemos dados pessoais.</p>
 
-        <h2>5. Transferencia internacional de dados</h2>
+        <h2>5. Assistente de Inteligencia Artificial e compartilhamento com OpenAI</h2>
+        <p>
+          O app inclui um assistente financeiro baseado em Inteligencia Artificial (GuIA). Para que o assistente funcione, dados do usuario sao enviados a um servico de IA de terceiro.
+        </p>
+
+        <p><strong>Como os dados sao coletados:</strong><br />
+          Diretamente pelo usuario ao digitar ou falar no chat do assistente, e a partir dos dados financeiros ja cadastrados no app.
+        </p>
+
+        <p><strong>O que e enviado:</strong></p>
+        <ul>
+          <li>Mensagens de texto digitadas ou transcritas no chat do assistente</li>
+          <li>Dados financeiros resumidos (saldos de contas, totais de receitas e despesas do mes, categorias de gastos) para personalizar as respostas</li>
+          <li>Gravacoes de audio, quando o usuario usa a entrada por voz, para transcricao via API Whisper da OpenAI</li>
+        </ul>
+
+        <p><strong>Para quem e enviado:</strong><br />
+          OpenAI, L.L.C. (openai.com). Os dados sao transmitidos por meio de servidor seguro (Supabase) e nao incluem nome, e-mail ou identificacao pessoal direta do usuario.
+        </p>
+
+        <p><strong>Finalidade:</strong><br />
+          Processar as perguntas do usuario e gerar respostas personalizadas no assistente financeiro.
+        </p>
+
+        <p><strong>Protecao dos dados pelo terceiro:</strong><br />
+          A OpenAI adota politicas de privacidade e seguranca compativeis com as exigencias deste servico. Dados enviados via API da OpenAI nao sao utilizados para treinar modelos, por padrao, conforme os termos de uso da API da OpenAI.
+        </p>
+
+        <p><strong>Consentimento e revogacao:</strong><br />
+          O envio de dados a OpenAI depende de consentimento explicito do usuario, solicitado na primeira vez que o recurso de chat e acessado. O usuario pode revogar esse consentimento a qualquer momento em <em>Configuracoes &rarr; Privacidade da IA</em>. Apos a revogacao, nenhum dado sera enviado ao assistente ate que o consentimento seja concedido novamente.
+        </p>
+
+        <h2>6. Transferencia internacional de dados</h2>
         <p>
           Alguns prestadores podem processar dados fora do Brasil. Nesses casos, adotamos medidas razoaveis para proteger os dados pessoais e exigir nivel adequado de seguranca e confidencialidade.
         </p>
 
-        <h2>6. Armazenamento e seguranca</h2>
+        <h2>7. Armazenamento e seguranca</h2>
         <p>
           Adotamos medidas tecnicas e administrativas para proteger os dados contra acesso nao autorizado, perda, uso indevido e alteracoes indevidas, incluindo controles de autenticacao e regras de acesso por usuario.
         </p>
 
-        <h2>7. Retencao e exclusao</h2>
+        <h2>8. Retencao e exclusao</h2>
         <p>
           Mantemos os dados enquanto sua conta estiver ativa ou pelo periodo necessario para cumprir obrigacoes legais e regulatorias.
         </p>
@@ -174,7 +206,7 @@
           Voce pode solicitar a exclusao da conta e dos dados pessoais por meio do canal de contato informado nesta politica.
         </p>
 
-        <h2>8. Seus direitos</h2>
+        <h2>9. Seus direitos</h2>
         <p>Nos termos da legislacao aplicavel, voce pode solicitar:</p>
         <ul>
           <li>confirmacao da existencia de tratamento</li>
@@ -186,18 +218,18 @@
           <li>revogacao de consentimento, quando essa for a base legal utilizada</li>
         </ul>
 
-        <h2>9. Privacidade de criancas e adolescentes</h2>
+        <h2>10. Privacidade de criancas e adolescentes</h2>
         <p>
           O app nao e destinado a criancas sem supervisao dos responsaveis. Caso identifiquemos tratamento inadequado de dados de menores em desacordo com a lei, adotaremos as medidas cabiveis.
         </p>
 
-        <h2>10. Alteracoes desta politica</h2>
+        <h2>11. Alteracoes desta politica</h2>
         <p>
           Podemos atualizar esta Politica de Privacidade periodicamente para refletir melhorias do produto, mudancas legais ou evolucao dos servicos.
         </p>
         <p>A versao mais atual estara sempre disponivel no link oficial informado no app.</p>
 
-        <h2>11. Contato</h2>
+        <h2>12. Contato</h2>
         <p>Para duvidas sobre esta politica, exercicio de direitos ou solicitacao de exclusao de dados:</p>
         <ul>
           <li><a href="mailto:suporte@guiaazulfinancas.com.br">suporte@guiaazulfinancas.com.br</a></li>
