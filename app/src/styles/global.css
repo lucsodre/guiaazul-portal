@@ -432,6 +432,9 @@ a:hover {
   padding: 12px var(--page-padding);
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: var(--topbar-height);
+  z-index: 9;
 }
 
 .month-picker-btn {
@@ -505,9 +508,30 @@ a:hover {
 }
 
 .summary-item-value {
-  font-size: 15px;
+  font-size: clamp(12px, 3.5vw, 15px);
   font-weight: 700;
+  white-space: nowrap;
 }
+
+/* Modifier for TransactionsPage summary card */
+.summary-card--tx {
+  margin: 12px 16px;
+}
+
+/* Filter pills sticky bar */
+.tx-filter-pills {
+  display: flex;
+  gap: 8px;
+  padding: 4px 16px 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: calc(var(--topbar-height) + 57px);
+  z-index: 9;
+}
+.tx-filter-pills::-webkit-scrollbar { display: none; }
 
 /* ---------- Responsive Media Queries ---------- */
 @media (max-width: 767px) {
@@ -516,6 +540,11 @@ a:hover {
   }
   .page-container {
     padding: var(--page-padding-mobile);
+  }
+  .summary-card--tx {
+    margin: 0;
+    border-radius: 0;
+    box-shadow: none;
   }
 }
 

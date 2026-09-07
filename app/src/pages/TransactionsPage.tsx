@@ -220,7 +220,7 @@ export default function TransactionsPage() {
       )}
 
       {/* Summary row */}
-      <div className="summary-card" style={{ margin: '12px 16px', borderRadius: 'var(--radius-md)' }}>
+      <div className="summary-card summary-card--tx">
         <div className="summary-item">
           <p className="summary-item-label">Receitas</p>
           <p className="summary-item-value text-income">{formatBRL(summary.income)}</p>
@@ -238,7 +238,7 @@ export default function TransactionsPage() {
       </div>
 
       {/* Filter pills */}
-      <div style={{ display: 'flex', gap: 8, padding: '4px 16px 8px', overflowX: 'auto' }}>
+      <div className="tx-filter-pills">
         {(['all', 'pending', 'consolidated'] as FilterStatus[]).map(f => (
           <button
             key={f}
