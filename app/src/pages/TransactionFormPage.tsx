@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { createTransaction, updateTransaction, getUserTransactions } from '../services/transactionService'
 import { TransactionFormData, TransactionType, RecurrenceType } from '../types/transaction'
 import { toInputDate, fromInputDate } from '../utils/date'
+import { formatInputBR } from '../utils/currency'
 import CurrencyInput from '../components/ui/CurrencyInput'
 import CategorySelector from '../components/forms/CategorySelector'
 import AccountSelector from '../components/forms/AccountSelector'
@@ -56,7 +57,7 @@ export default function TransactionFormPage() {
       if (tx) {
         setForm({
           type: tx.type,
-          amount: Math.abs(tx.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+          amount: formatInputBR(Math.abs(tx.amount)),
           description: tx.description || '',
           date: new Date(tx.transaction_date + 'T12:00:00'),
           account_id: tx.account_id,

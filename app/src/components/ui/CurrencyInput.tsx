@@ -1,4 +1,5 @@
 import React, { useRef } from 'react'
+import { formatInputBR } from '../../utils/currency'
 
 interface CurrencyInputProps {
   value: string
@@ -27,8 +28,7 @@ export default function CurrencyInput({
     const digits = e.target.value.replace(/\D/g, '')
     if (!digits) { onChange(''); return }
     const number = parseInt(digits, 10) / 100
-    const formatted = number.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-    onChange(formatted)
+    onChange(formatInputBR(number))
   }
 
   return (

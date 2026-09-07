@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { createBankAccount, updateBankAccount, getBankAccountById } from '../services/bankAccountService'
+import { formatInputBR } from '../utils/currency'
 import { ACCOUNT_TYPES } from '../types/bankAccount'
 import Input from '../components/ui/Input'
 import CurrencyInput from '../components/ui/CurrencyInput'
@@ -31,7 +32,7 @@ export default function AccountFormPage() {
         setName(acc.name)
         setType(acc.type)
         setColor(acc.color)
-        setInitialBalance(acc.initial_balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 }))
+        setInitialBalance(formatInputBR(acc.initial_balance))
         setIsPrimary(acc.is_primary)
       }
       setLoadingData(false)
