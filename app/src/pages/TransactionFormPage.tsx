@@ -86,7 +86,7 @@ export default function TransactionFormPage() {
 
   function validate(): boolean {
     const errs: Partial<Record<keyof TransactionFormData, string>> = {}
-    if (!form.amount || parseFloat(form.amount.replace(',', '.')) <= 0) {
+    if (!form.amount || parseFloat(form.amount.replace(/\./g, '').replace(',', '.')) <= 0) {
       errs.amount = 'Informe o valor'
     }
     if (!form.account_id) errs.account_id = 'Selecione a conta'

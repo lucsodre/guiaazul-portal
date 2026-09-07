@@ -61,7 +61,7 @@ export async function createTransaction(
   data: TransactionFormData
 ): Promise<Transaction | null> {
   try {
-    const amount = parseFloat(data.amount.replace(',', '.'))
+    const amount = parseFloat(data.amount.replace(/\./g, '').replace(',', '.'))
     if (isNaN(amount) || amount <= 0) return null
 
     const total = data.installments_total || 1
@@ -304,7 +304,7 @@ export async function updateTransaction(
   formData: TransactionFormData
 ): Promise<Transaction | null> {
   try {
-    const amount = parseFloat(formData.amount.replace(',', '.'))
+    const amount = parseFloat(formData.amount.replace(/\./g, '').replace(',', '.'))
     if (isNaN(amount) || amount <= 0) return null
     const finalAmount = formData.type === 'expense' ? -Math.abs(amount) : Math.abs(amount)
     const transactionDate = new Date(formData.date)
