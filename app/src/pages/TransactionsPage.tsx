@@ -7,6 +7,7 @@ import {
   updateTransactionsBatch, getTransactionsSummary, consolidateTransaction,
   unconsolidateTransaction,
 } from '../services/transactionService'
+import { getUserBankAccounts } from '../services/bankAccountService'
 import { Transaction } from '../types/transaction'
 import { formatBRL } from '../utils/currency'
 import { formatDateHeader, getMonthStart, getMonthEnd } from '../utils/date'
@@ -19,22 +20,30 @@ import { SkeletonList } from '../components/ui/Skeleton'
 
 type FilterStatus = 'all' | 'pending' | 'consolidated'
 
-function groupByDate(txs: Transaction[]): { date: string; items: Transaction[] }[] {
-  const map = new Map<string, Transaction[]>()
-  for (const tx of txs) {
-    const key = tx.transaction_date
-    if (!map.has(key)) map.set(key, [])
-    map.get(key)!.push(tx)
-  }
-  return Array.from(map.entries()).map(([date, items]) => ({ date, items }))
+// amounts are signed: income positive, expense negative, transfer neutral for total balance
+function getTransactionImpact(tx: Transaction): number {
+  return tx.type === 'transfer' ? 0 : tx.amount
 }
 
-function calcDayBalance(items: Transaction[]): number {
-  return items.reduce((acc, tx) => {
-    if (tx.type === 'income')  return acc + Math.abs(tx.amount)
-    if (tx.type === 'expense') return acc - Math.abs(tx.amount)
-    return acc
-  }, 0)
+function groupByDate(
+  txs: Transaction[],
+  initialBalance: number
+): { date: string; items: Transaction[]; balance: number }[] {
+  const sorted = [...txs].sort((a, b) =>
+    a.transaction_date.localeCompare(b.transaction_date)
+  )
+  const map = new Map<string, Transaction[]>()
+  for (const tx of sorted) {
+    if (!map.has(tx.transaction_date)) map.set(tx.transaction_date, [])
+    map.get(tx.transaction_date)!.push(tx)
+  }
+  let running = initialBalance
+  const result: { date: string; items: Transaction[]; balance: number }[] = []
+  for (const [date, items] of map.entries()) {
+    items.forEach(tx => { running += getTransactionImpact(tx) })
+    result.push({ date, items, balance: running })
+  }
+  return result.reverse()
 }
 
 export default function TransactionsPage() {
@@ -54,6 +63,8 @@ export default function TransactionsPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const selectMode = selected.size > 0
 
+  const [previousBalance, setPreviousBalance] = useState(0)
+
   const [confirmDelete, setConfirmDelete] = useState<{ ids: string[]; label: string } | null>(null)
   const [confirmLoading, setConfirmLoading] = useState(false)
 
@@ -67,10 +78,21 @@ export default function TransactionsPage() {
       const isConsolidated = filterStatus === 'consolidated' ? true
                            : filterStatus === 'pending'      ? false
                            : undefined
-      const [txs, sum] = await Promise.all([
+      // prevMonthEnd = day before startDate (last day of previous month)
+      const prevMonthEnd = new Date(new Date(startDate).getTime() - 86400000)
+        .toISOString().split('T')[0]
+      const [txs, sum, accs, prevTxs] = await Promise.all([
         getUserTransactions(user.id, { startDate, endDate, isConsolidated }),
         getTransactionsSummary(user.id, startDate, endDate),
+        getUserBankAccounts(user.id),
+        getUserTransactions(user.id, { endDate: prevMonthEnd }),
       ])
+      const initBal = accs
+        .filter(a => a.is_active)
+        .reduce((s, a) => s + a.initial_balance, 0)
+      let prevBal = initBal
+      prevTxs.forEach(tx => { prevBal += getTransactionImpact(tx) })
+      setPreviousBalance(prevBal)
       setTransactions(txs)
       setSummary(sum)
       setSelected(new Set())
@@ -93,7 +115,7 @@ export default function TransactionsPage() {
     )
   }, [transactions, searchQuery])
 
-  const groups = useMemo(() => groupByDate(filtered), [filtered])
+  const groups = useMemo(() => groupByDate(filtered, previousBalance), [filtered, previousBalance])
 
   function toggleSelect(id: string) {
     setSelected(prev => {
@@ -247,17 +269,15 @@ export default function TransactionsPage() {
           </div>
         )}
 
-        {!loading && groups.map(({ date, items }) => {
-          const dayBal = calcDayBalance(items)
-          return (
+        {!loading && groups.map(({ date, items, balance }) => (
           <div key={date} style={{ marginBottom: 8 }}>
             <div className="section-header-row" style={{ paddingTop: 8 }}>
               <p className="section-header">{formatDateHeader(date)}</p>
               <span
                 className="day-balance"
-                style={{ color: dayBal > 0 ? 'var(--color-income)' : dayBal < 0 ? 'var(--color-expense)' : 'var(--color-text-muted)' }}
+                style={{ color: balance >= 0 ? 'var(--color-income)' : 'var(--color-expense)' }}
               >
-                {dayBal > 0 ? '+' : ''}{formatBRL(dayBal)}
+                Saldo: {formatBRL(balance)}
               </span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -276,8 +296,7 @@ export default function TransactionsPage() {
               ))}
             </div>
           </div>
-          )
-        })}
+        ))}
       </div>
 
       {/* FAB */}
