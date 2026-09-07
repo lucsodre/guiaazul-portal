@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext'
 import {
   getUserTransactions, deleteTransaction, deleteTransactionsBatch,
   updateTransactionsBatch, getTransactionsSummary, consolidateTransaction,
+  unconsolidateTransaction,
 } from '../services/transactionService'
 import { Transaction } from '../types/transaction'
 import { formatBRL } from '../utils/currency'
@@ -117,9 +118,21 @@ export default function TransactionsPage() {
     await load()
   }
 
+  async function handleUnconsolidate(tx: Transaction) {
+    if (!user) return
+    await unconsolidateTransaction(tx.id, user.id)
+    await load()
+  }
+
   async function handleBulkConsolidate() {
     if (!user || !selected.size) return
     await updateTransactionsBatch(Array.from(selected), user.id, { is_consolidated: true })
+    await load()
+  }
+
+  async function handleBulkUnconsolidate() {
+    if (!user || !selected.size) return
+    await updateTransactionsBatch(Array.from(selected), user.id, { is_consolidated: false })
     await load()
   }
 
@@ -240,6 +253,7 @@ export default function TransactionsPage() {
                   onEdit={(t) => navigate(`/app/transactions/${t.id}`)}
                   onDelete={(t) => askDelete([t.id], `"${t.description || 'esta transação'}"`)}
                   onConsolidate={handleConsolidate}
+                  onUnconsolidate={handleUnconsolidate}
                 />
               ))}
             </div>
@@ -263,6 +277,7 @@ export default function TransactionsPage() {
           onSelectAll={selectAll}
           onClearSelection={clearSelection}
           onConsolidate={handleBulkConsolidate}
+          onUnconsolidate={handleBulkUnconsolidate}
           onDelete={() => askDelete(Array.from(selected), `${selected.size} transação(ões)`)}
         />
       )}

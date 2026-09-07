@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Pencil, Trash2, Check, X } from 'lucide-react'
+import { Pencil, Trash2, Check, X, RotateCcw } from 'lucide-react'
 import { Transaction } from '../../types/transaction'
 import { formatBRL } from '../../utils/currency'
 import { formatDateHeader } from '../../utils/date'
@@ -13,12 +13,13 @@ interface TransactionCardProps {
   onEdit: (tx: Transaction) => void
   onDelete: (tx: Transaction) => void
   onConsolidate: (tx: Transaction) => void
+  onUnconsolidate: (tx: Transaction) => void
 }
 
 export default function TransactionCard({
   transaction: tx,
   selected, selectMode,
-  onSelect, onEdit, onDelete, onConsolidate,
+  onSelect, onEdit, onDelete, onConsolidate, onUnconsolidate,
 }: TransactionCardProps) {
   const [hovered, setHovered] = useState(false)
 
@@ -83,13 +84,21 @@ export default function TransactionCard({
       {/* Hover actions (desktop) */}
       {hovered && !selectMode && (
         <div className="tx-card-actions" onClick={(e) => e.stopPropagation()}>
-          {isPending && (
+          {isPending ? (
             <button
               className="tx-action-btn tx-action-consolidate"
               onClick={() => onConsolidate(tx)}
               title="Consolidar"
             >
               <Check size={15} />
+            </button>
+          ) : (
+            <button
+              className="tx-action-btn tx-action-unconsolidate"
+              onClick={() => onUnconsolidate(tx)}
+              title="Desconsolidar"
+            >
+              <RotateCcw size={15} />
             </button>
           )}
           <button

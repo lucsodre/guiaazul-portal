@@ -1,4 +1,4 @@
-import { X, Check, Calendar, Wallet, Trash2 } from 'lucide-react'
+import { X, Check, RotateCcw, Trash2 } from 'lucide-react'
 import { formatBRL } from '../../utils/currency'
 
 interface BulkActionBarProps {
@@ -8,13 +8,14 @@ interface BulkActionBarProps {
   onSelectAll: () => void
   onClearSelection: () => void
   onConsolidate: () => void
+  onUnconsolidate: () => void
   onDelete: () => void
 }
 
 export default function BulkActionBar({
   count, total, allSelected,
   onSelectAll, onClearSelection,
-  onConsolidate, onDelete,
+  onConsolidate, onUnconsolidate, onDelete,
 }: BulkActionBarProps) {
   return (
     <div className="bulk-bar">
@@ -37,6 +38,10 @@ export default function BulkActionBar({
         <button className="bulk-btn bulk-btn-consolidate" onClick={onConsolidate} title="Consolidar selecionados">
           <Check size={16} />
           <span>Consolidar</span>
+        </button>
+        <button className="bulk-btn bulk-btn-unconsolidate" onClick={onUnconsolidate} title="Desconsolidar selecionados">
+          <RotateCcw size={16} />
+          <span>Desconsolidar</span>
         </button>
         <button className="bulk-btn bulk-btn-delete" onClick={onDelete} title="Excluir selecionados">
           <Trash2 size={16} />
