@@ -240,6 +240,11 @@ a:hover {
 }
 
 /* ---------- Section Header ---------- */
+.section-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
 .section-header {
   font-size: 12px;
   font-weight: 600;
@@ -247,6 +252,11 @@ a:hover {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   padding: 4px 0 8px;
+}
+.day-balance {
+  font-size: 12px;
+  font-weight: 600;
+  padding-bottom: 8px;
 }
 
 /* ---------- Page Layout ---------- */

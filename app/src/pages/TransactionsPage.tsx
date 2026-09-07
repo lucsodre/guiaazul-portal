@@ -29,6 +29,14 @@ function groupByDate(txs: Transaction[]): { date: string; items: Transaction[] }
   return Array.from(map.entries()).map(([date, items]) => ({ date, items }))
 }
 
+function calcDayBalance(items: Transaction[]): number {
+  return items.reduce((acc, tx) => {
+    if (tx.type === 'income')  return acc + Math.abs(tx.amount)
+    if (tx.type === 'expense') return acc - Math.abs(tx.amount)
+    return acc
+  }, 0)
+}
+
 export default function TransactionsPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
@@ -239,9 +247,19 @@ export default function TransactionsPage() {
           </div>
         )}
 
-        {!loading && groups.map(({ date, items }) => (
+        {!loading && groups.map(({ date, items }) => {
+          const dayBal = calcDayBalance(items)
+          return (
           <div key={date} style={{ marginBottom: 8 }}>
-            <p className="section-header" style={{ paddingTop: 8 }}>{formatDateHeader(date)}</p>
+            <div className="section-header-row" style={{ paddingTop: 8 }}>
+              <p className="section-header">{formatDateHeader(date)}</p>
+              <span
+                className="day-balance"
+                style={{ color: dayBal > 0 ? 'var(--color-income)' : dayBal < 0 ? 'var(--color-expense)' : 'var(--color-text-muted)' }}
+              >
+                {dayBal > 0 ? '+' : ''}{formatBRL(dayBal)}
+              </span>
+            </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               {items.map(tx => (
                 <TransactionCard
@@ -258,7 +276,8 @@ export default function TransactionsPage() {
               ))}
             </div>
           </div>
-        ))}
+          )
+        })}
       </div>
 
       {/* FAB */}
