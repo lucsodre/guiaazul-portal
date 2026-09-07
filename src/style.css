@@ -211,6 +211,19 @@ button {
   border-color: rgba(255,255,255,.25) !important;
 }
 
+.btn-nav-login {
+  background: #00C8F0 !important;
+  border-color: #00C8F0 !important;
+  color: #060e1e !important;
+  font-weight: 600 !important;
+}
+
+.btn-nav-login:hover {
+  background: #33d4f4 !important;
+  border-color: #33d4f4 !important;
+  color: #060e1e !important;
+}
+
 /* ----------------------------------------------------------------
    5. HERO
 ---------------------------------------------------------------- */
