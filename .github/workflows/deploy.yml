@@ -1,0 +1,56 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: app/package.json
+
+      - name: Install dependencies
+        run: cd app && npm ci
+
+      - name: Build app
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_AI_ASSISTANT_FUNCTION_NAME: ai-assistant-chat
+        run: cd app && npm run build
+
+      - name: Prepare deploy directory
+        run: |
+          mkdir -p deploy/app
+          # Copy marketing site files
+          cp index.html deploy/ 2>/dev/null || true
+          cp robots.txt deploy/ 2>/dev/null || true
+          cp favicon.ico deploy/ 2>/dev/null || true
+          cp CNAME deploy/ 2>/dev/null || true
+          cp -r src deploy/ 2>/dev/null || true
+          cp -r assets deploy/ 2>/dev/null || true
+          cp -r docs deploy/ 2>/dev/null || true
+          # Copy built app
+          cp -r app/dist/. deploy/app/
+          # 404 redirect for SPA routing
+          cp deploy/app/index.html deploy/app/404.html
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./deploy
+          cname: guiaazulfinancas.com.br
