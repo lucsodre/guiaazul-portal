@@ -40,14 +40,7 @@ jobs:
 
       - name: Prepare deploy directory
         run: |
-          echo "=== app/dist contents ==="
-          ls -la app/dist/ || echo "DIST DIR MISSING"
-          ls -la app/dist/assets/ || echo "DIST ASSETS MISSING"
-          echo "=== dist/index.html first line ==="
-          head -5 app/dist/index.html || echo "DIST INDEX.HTML MISSING"
-
           mkdir -p deploy/app
-          # Marketing site files
           cp index.html deploy/
           cp CNAME deploy/ 2>/dev/null || true
           cp robots.txt deploy/ 2>/dev/null || true
@@ -55,15 +48,8 @@ jobs:
           cp -r src deploy/ 2>/dev/null || true
           cp -r assets deploy/ 2>/dev/null || true
           cp -r docs deploy/ 2>/dev/null || true
-          # React SPA (built output)
           cp -r app/dist/. deploy/app/
-          # 404 fallback for SPA deep-link routing
           cp deploy/app/index.html deploy/app/404.html
-
-          echo "=== deploy/app contents ==="
-          ls -la deploy/app/
-          echo "=== deploy/app/index.html ==="
-          cat deploy/app/index.html
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
