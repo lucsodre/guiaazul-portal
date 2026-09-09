@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import { getUserBankAccounts } from './bankAccountService'
 import { BankAccount } from '../types/bankAccount'
 import { Transaction } from '../types/transaction'
 
@@ -24,13 +25,12 @@ export async function getDashboardData(
   userId: string,
   consolidationFilter: DashboardConsolidationFilter = 'all'
 ): Promise<DashboardData> {
-  const { data: accounts, error: accountsError } = await supabase
-    .from('bank_accounts').select('*').eq('user_id', userId).eq('is_active', true)
-    .order('is_primary', { ascending: false }).order('created_at', { ascending: true })
-  if (accountsError) throw accountsError
-
-  const accountList = (accounts ?? []) as BankAccount[]
-  const primaryAccount = accountList.find((acc) => acc.is_primary) || null
+  // getUserBankAccounts computes current_balance from initial_balance + consolidated
+  // transactions on every read — no dependency on the DB trigger-maintained column.
+  const allAccounts = await getUserBankAccounts(userId)
+  const accountList = allAccounts.filter(a => a.is_active)
+  const primaryAccount = accountList.find(a => a.is_primary) || null
+  const totalBalance = accountList.reduce((s, a) => s + a.current_balance, 0)
 
   const now = new Date()
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
@@ -53,7 +53,6 @@ export async function getDashboardData(
     { data: incomeData },
     { data: expenseData },
     { data: historicalTxData },
-    { data: consolidatedTxData },
   ] = await Promise.all([
     supabase.from('transactions')
       .select(`*, category:categories(id, name, icon, color), account:bank_accounts!transactions_account_id_fkey(id, name, type)`)
@@ -63,10 +62,6 @@ export async function getDashboardData(
     expenseQueryBase,
     supabase.from('transactions').select('amount').eq('user_id', userId)
       .in('type', ['income', 'expense']).lte('transaction_date', prevEndDate),
-    // Compute totalBalance from consolidated transactions — avoids relying on the
-    // current_balance column maintained by a DB trigger that may double-count.
-    supabase.from('transactions').select('amount').eq('user_id', userId)
-      .eq('is_consolidated', true).in('type', ['income', 'expense']),
   ])
 
   const income = (incomeData ?? []).reduce((s, t: { amount: number }) => s + Math.abs(t.amount), 0)
@@ -75,9 +70,6 @@ export async function getDashboardData(
   const accountsInitialBalance = accountList.reduce((s, acc) => s + (acc.initial_balance ?? 0), 0)
   const historicalNet = (historicalTxData ?? []).reduce((s, tx: { amount: number }) => s + tx.amount, 0)
   const previousMonthBalance = accountsInitialBalance + historicalNet
-
-  const consolidatedNet = (consolidatedTxData ?? []).reduce((s, tx: { amount: number }) => s + tx.amount, 0)
-  const totalBalance = accountsInitialBalance + consolidatedNet
 
   const budget = income
   const hasIncome = income > 0
