@@ -34,17 +34,20 @@ export default function BulkActionBar({
 
   return (
     <div className="bulk-bar">
-      <div className="bulk-bar-info">
-        <button className="bulk-bar-clear" onClick={onClearSelection} aria-label="Cancelar seleção">
-          <X size={18} />
-        </button>
-        <span className="bulk-bar-count">{count} selecionado{count !== 1 ? 's' : ''}</span>
+      {/* Linha 1: contador + total */}
+      <div className="bulk-bar-top">
+        <div className="bulk-bar-info">
+          <button className="bulk-bar-clear" onClick={onClearSelection} aria-label="Cancelar seleção">
+            <X size={18} />
+          </button>
+          <span className="bulk-bar-count">{count} selecionado{count !== 1 ? 's' : ''}</span>
+        </div>
+        <div className="bulk-bar-total">
+          {formatBRL(Math.abs(total))}
+        </div>
       </div>
 
-      <div className="bulk-bar-total">
-        <span>{formatBRL(Math.abs(total))}</span>
-      </div>
-
+      {/* Linha 2: ações */}
       <div className="bulk-bar-actions">
         {pickingDate ? (
           <>
