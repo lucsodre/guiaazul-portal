@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { X } from 'lucide-react'
 
 interface ModalProps {
@@ -20,6 +20,21 @@ export default function Modal({
   hideClose = false,
   footer,
 }: ModalProps) {
+  // Guard against iOS ghost click: the touchend that opens the modal fires a
+  // native click ~300ms later at the same coordinates, which now hits the overlay.
+  // Ignore overlay clicks for the first 350ms after the modal opens.
+  const ignoreCloseRef = useRef(false)
+
+  useEffect(() => {
+    if (!open) return
+    ignoreCloseRef.current = true
+    const timer = setTimeout(() => { ignoreCloseRef.current = false }, 350)
+    return () => {
+      clearTimeout(timer)
+      ignoreCloseRef.current = false
+    }
+  }, [open])
+
   useEffect(() => {
     if (!open) return
     function handleKey(e: KeyboardEvent) {
@@ -38,7 +53,7 @@ export default function Modal({
   const sizeMap = { sm: '400px', md: '520px', lg: '680px', xl: '880px', full: '100%' }
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={() => { if (!ignoreCloseRef.current) onClose() }}>
       <div
         className="modal-container animate-slide-up"
         style={{ maxWidth: sizeMap[size] }}
