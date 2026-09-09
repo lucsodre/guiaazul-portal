@@ -31,42 +31,53 @@ export async function getDashboardData(
 
   const accountList = (accounts ?? []) as BankAccount[]
   const primaryAccount = accountList.find((acc) => acc.is_primary) || null
-  const totalBalance = accountList.reduce((sum, acc) => sum + acc.current_balance, 0)
-
-  const { data: upcomingTransactions } = await supabase
-    .from('transactions')
-    .select(`*, category:categories(id, name, icon, color), account:bank_accounts!transactions_account_id_fkey(id, name, type)`)
-    .eq('user_id', userId).eq('is_consolidated', false)
-    .order('transaction_date', { ascending: true }).limit(5)
 
   const now = new Date()
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
   const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
   const startDate = startOfMonth.toISOString().split('T')[0]
   const endDate = endOfMonth.toISOString().split('T')[0]
+  const endOfPrevMonth = new Date(startOfMonth.getFullYear(), startOfMonth.getMonth(), 0)
+  const prevEndDate = endOfPrevMonth.toISOString().split('T')[0]
 
-  let incomeQuery = supabase.from('transactions').select('amount')
+  let incomeQueryBase = supabase.from('transactions').select('amount')
     .eq('user_id', userId).eq('type', 'income').gte('transaction_date', startDate).lte('transaction_date', endDate)
-  if (consolidationFilter === 'consolidated') incomeQuery = incomeQuery.eq('is_consolidated', true)
-  const { data: incomeData } = await incomeQuery
+  if (consolidationFilter === 'consolidated') incomeQueryBase = incomeQueryBase.eq('is_consolidated', true)
 
-  let expenseQuery = supabase.from('transactions').select('amount')
+  let expenseQueryBase = supabase.from('transactions').select('amount')
     .eq('user_id', userId).eq('type', 'expense').gte('transaction_date', startDate).lte('transaction_date', endDate)
-  if (consolidationFilter === 'consolidated') expenseQuery = expenseQuery.eq('is_consolidated', true)
-  const { data: expenseData } = await expenseQuery
+  if (consolidationFilter === 'consolidated') expenseQueryBase = expenseQueryBase.eq('is_consolidated', true)
+
+  const [
+    { data: upcomingTransactions },
+    { data: incomeData },
+    { data: expenseData },
+    { data: historicalTxData },
+    { data: consolidatedTxData },
+  ] = await Promise.all([
+    supabase.from('transactions')
+      .select(`*, category:categories(id, name, icon, color), account:bank_accounts!transactions_account_id_fkey(id, name, type)`)
+      .eq('user_id', userId).eq('is_consolidated', false)
+      .order('transaction_date', { ascending: true }).limit(5),
+    incomeQueryBase,
+    expenseQueryBase,
+    supabase.from('transactions').select('amount').eq('user_id', userId)
+      .in('type', ['income', 'expense']).lte('transaction_date', prevEndDate),
+    // Compute totalBalance from consolidated transactions — avoids relying on the
+    // current_balance column maintained by a DB trigger that may double-count.
+    supabase.from('transactions').select('amount').eq('user_id', userId)
+      .eq('is_consolidated', true).in('type', ['income', 'expense']),
+  ])
 
   const income = (incomeData ?? []).reduce((s, t: { amount: number }) => s + Math.abs(t.amount), 0)
   const spent = (expenseData ?? []).reduce((s, t: { amount: number }) => s + Math.abs(t.amount), 0)
 
-  const endOfPrevMonth = new Date(startOfMonth.getFullYear(), startOfMonth.getMonth(), 0)
-  const prevEndDate = endOfPrevMonth.toISOString().split('T')[0]
-  const { data: historicalTxData } = await supabase
-    .from('transactions').select('amount').eq('user_id', userId)
-    .in('type', ['income', 'expense']).lte('transaction_date', prevEndDate)
-
   const accountsInitialBalance = accountList.reduce((s, acc) => s + (acc.initial_balance ?? 0), 0)
   const historicalNet = (historicalTxData ?? []).reduce((s, tx: { amount: number }) => s + tx.amount, 0)
   const previousMonthBalance = accountsInitialBalance + historicalNet
+
+  const consolidatedNet = (consolidatedTxData ?? []).reduce((s, tx: { amount: number }) => s + tx.amount, 0)
+  const totalBalance = accountsInitialBalance + consolidatedNet
 
   const budget = income
   const hasIncome = income > 0
