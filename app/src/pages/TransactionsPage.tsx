@@ -9,6 +9,7 @@ import {
 } from '../services/transactionService'
 import { getUserBankAccounts } from '../services/bankAccountService'
 import { Transaction } from '../types/transaction'
+import { BankAccount } from '../types/bankAccount'
 import { formatBRL } from '../utils/currency'
 import { formatDateHeader, getMonthStart, getMonthEnd } from '../utils/date'
 import MonthPicker from '../components/ui/MonthPicker'
@@ -59,11 +60,13 @@ export default function TransactionsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all')
+  const [filterAccount, setFilterAccount] = useState<string>('')
 
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const selectMode = selected.size > 0
 
-  const [previousBalance, setPreviousBalance] = useState(0)
+  const [accounts, setAccounts] = useState<BankAccount[]>([])
+  const [prevTxsAll, setPrevTxsAll] = useState<Transaction[]>([])
 
   const [confirmDelete, setConfirmDelete] = useState<{ ids: string[]; label: string } | null>(null)
   const [confirmLoading, setConfirmLoading] = useState(false)
@@ -87,12 +90,8 @@ export default function TransactionsPage() {
         getUserBankAccounts(user.id),
         getUserTransactions(user.id, { endDate: prevMonthEnd }),
       ])
-      const initBal = accs
-        .filter(a => a.is_active)
-        .reduce((s, a) => s + a.initial_balance, 0)
-      let prevBal = initBal
-      prevTxs.forEach(tx => { prevBal += getTransactionImpact(tx) })
-      setPreviousBalance(prevBal)
+      setAccounts(accs.filter(a => a.is_active))
+      setPrevTxsAll(prevTxs)
       setTransactions(txs)
       setSummary(sum)
       setSelected(new Set())
@@ -105,15 +104,30 @@ export default function TransactionsPage() {
 
   useEffect(() => { load() }, [load])
 
+  const previousBalance = useMemo(() => {
+    const relevantAccs = filterAccount ? accounts.filter(a => a.id === filterAccount) : accounts
+    const initBal = relevantAccs.reduce((s, a) => s + (a.initial_balance ?? 0), 0)
+    let bal = initBal
+    const relevantPrev = filterAccount ? prevTxsAll.filter(tx => tx.account_id === filterAccount) : prevTxsAll
+    relevantPrev.forEach(tx => { bal += getTransactionImpact(tx) })
+    return bal
+  }, [filterAccount, accounts, prevTxsAll])
+
   const filtered = useMemo(() => {
-    if (!searchQuery.trim()) return transactions
-    const q = searchQuery.toLowerCase()
-    return transactions.filter(tx =>
-      tx.description?.toLowerCase().includes(q) ||
-      tx.category?.name?.toLowerCase().includes(q) ||
-      tx.account?.name?.toLowerCase().includes(q)
-    )
-  }, [transactions, searchQuery])
+    let result = transactions
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase()
+      result = result.filter(tx =>
+        tx.description?.toLowerCase().includes(q) ||
+        tx.category?.name?.toLowerCase().includes(q) ||
+        tx.account?.name?.toLowerCase().includes(q)
+      )
+    }
+    if (filterAccount) {
+      result = result.filter(tx => tx.account_id === filterAccount)
+    }
+    return result
+  }, [transactions, searchQuery, filterAccount])
 
   const groups = useMemo(() => groupByDate(filtered, previousBalance), [filtered, previousBalance])
 
@@ -163,6 +177,12 @@ export default function TransactionsPage() {
   async function handleBulkUnconsolidate() {
     if (!user || !selected.size) return
     await updateTransactionsBatch(Array.from(selected), user.id, { is_consolidated: false })
+    await load()
+  }
+
+  async function handleBulkChangeDate(date: string) {
+    if (!user || !selected.size) return
+    await updateTransactionsBatch(Array.from(selected), user.id, { transaction_date: date })
     await load()
   }
 
@@ -249,6 +269,29 @@ export default function TransactionsPage() {
             {f === 'all' ? 'Todas' : f === 'pending' ? 'Pendentes' : 'Consolidadas'}
           </button>
         ))}
+
+        {accounts.length > 1 && (
+          <>
+            <div style={{ width: 1, alignSelf: 'stretch', background: 'var(--color-border)', margin: '2px 4px', flexShrink: 0 }} />
+            <button
+              className={`month-picker-item ${!filterAccount ? 'active' : ''}`}
+              onClick={() => setFilterAccount('')}
+              style={{ flexShrink: 0 }}
+            >
+              Todas contas
+            </button>
+            {accounts.map(acc => (
+              <button
+                key={acc.id}
+                className={`month-picker-item ${filterAccount === acc.id ? 'active' : ''}`}
+                onClick={() => setFilterAccount(acc.id)}
+                style={{ flexShrink: 0 }}
+              >
+                {acc.name}
+              </button>
+            ))}
+          </>
+        )}
       </div>
 
       {/* Content */}
@@ -317,6 +360,7 @@ export default function TransactionsPage() {
           onConsolidate={handleBulkConsolidate}
           onUnconsolidate={handleBulkUnconsolidate}
           onDelete={() => askDelete(Array.from(selected), `${selected.size} transação(ões)`)}
+          onChangeDate={handleBulkChangeDate}
         />
       )}
 

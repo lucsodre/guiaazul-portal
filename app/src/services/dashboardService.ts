@@ -8,6 +8,7 @@ export interface DashboardData {
   accounts: BankAccount[]
   totalBalance: number
   upcomingTransactions: Transaction[]
+  recentTransactions: Transaction[]
   budgetUsage: {
     income: number
     spent: number
@@ -53,6 +54,7 @@ export async function getDashboardData(
     { data: incomeData },
     { data: expenseData },
     { data: historicalTxData },
+    { data: recentTxData },
   ] = await Promise.all([
     supabase.from('transactions')
       .select(`*, category:categories(id, name, icon, color), account:bank_accounts!transactions_account_id_fkey(id, name, type)`)
@@ -62,6 +64,11 @@ export async function getDashboardData(
     expenseQueryBase,
     supabase.from('transactions').select('amount').eq('user_id', userId)
       .in('type', ['income', 'expense']).lte('transaction_date', prevEndDate),
+    supabase.from('transactions')
+      .select(`*, category:categories(id, name, icon, color), account:bank_accounts!transactions_account_id_fkey(id, name)`)
+      .eq('user_id', userId)
+      .order('updated_at', { ascending: false })
+      .limit(10),
   ])
 
   const income = (incomeData ?? []).reduce((s, t: { amount: number }) => s + Math.abs(t.amount), 0)
@@ -79,6 +86,7 @@ export async function getDashboardData(
   return {
     primaryAccount, accounts: accountList, totalBalance,
     upcomingTransactions: (upcomingTransactions || []) as Transaction[],
+    recentTransactions: (recentTxData || []) as Transaction[],
     budgetUsage: {
       income, spent, budget, percentage: Math.round(percentage),
       hasIncome, isOverBudget, previousMonthBalance,

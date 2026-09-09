@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, RefreshCw, AlertTriangle, Clock } from 'lucide-react'
+import { Plus, RefreshCw, AlertTriangle, Clock, Pencil } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import {
   getDashboardData, formatDueDate, isOverdue,
@@ -195,6 +195,53 @@ export default function HomePage() {
                 ))}
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Recent transactions */}
+        {loading ? <SkeletonCard lines={5} /> : (data?.recentTransactions.length ?? 0) > 0 && (
+          <div className="card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text-heading)' }}>Movimentações recentes</p>
+              <button
+                onClick={() => navigate('/app/transactions')}
+                style={{ fontSize: 12, color: 'var(--color-primary)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}
+              >
+                Ver todas
+              </button>
+            </div>
+            {data!.recentTransactions.map((tx, idx) => {
+              const amountColor = tx.type === 'income' ? 'var(--color-income)' : tx.type === 'expense' ? 'var(--color-expense)' : 'var(--color-transfer)'
+              const isLast = idx === data!.recentTransactions.length - 1
+              return (
+                <div key={tx.id} style={{ display: 'flex', alignItems: 'center', gap: 10, paddingBottom: isLast ? 0 : 8, marginBottom: isLast ? 0 : 8, borderBottom: isLast ? 'none' : '1px solid var(--color-border)' }}>
+                  <CategoryIcon
+                    name={(tx as any).category?.icon}
+                    color={(tx as any).category?.color || 'var(--color-text-subtle)'}
+                    size={32}
+                  />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p className="truncate" style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text)' }}>
+                      {tx.description || (tx.type === 'income' ? 'Receita' : tx.type === 'expense' ? 'Despesa' : 'Transferência')}
+                    </p>
+                    <p style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
+                      {formatDateShort(tx.transaction_date)}{(tx as any).account?.name ? ` · ${(tx as any).account.name}` : ''}
+                    </p>
+                  </div>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: amountColor, flexShrink: 0 }}>
+                    {tx.type === 'income' ? '+' : tx.type === 'expense' ? '-' : ''}{formatBRLCompact(Math.abs(tx.amount))}
+                  </span>
+                  <button
+                    onClick={() => navigate(`/app/transactions/${tx.id}`)}
+                    className="tx-action-btn tx-action-edit"
+                    title="Editar"
+                    style={{ flexShrink: 0 }}
+                  >
+                    <Pencil size={14} />
+                  </button>
+                </div>
+              )
+            })}
           </div>
         )}
 

@@ -887,6 +887,7 @@ a:hover {
   display: flex;
   flex-direction: column;
   transition: margin-left 0.2s ease;
+  overflow-x: hidden;
 }
 
 /* ---------- Sidebar ---------- */
@@ -1148,8 +1149,8 @@ a:hover {
 }
 
 .tx-card-body { flex: 1; min-width: 0; }
-.tx-card-description { font-size: 14px; font-weight: 600; color: var(--color-text); }
-.tx-card-amount { font-size: 15px; font-weight: 800; white-space: nowrap; }
+.tx-card-description { font-size: 14px; font-weight: 600; color: var(--color-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tx-card-amount { font-size: 15px; font-weight: 800; white-space: nowrap; flex-shrink: 0; }
 .tx-card-meta { font-size: 12px; color: var(--color-text-muted); }
 
 /* Hover action buttons */
@@ -1280,6 +1281,25 @@ a:hover {
 .bulk-btn-delete:hover { background: rgba(239,68,68,0.2); }
 .bulk-btn-consolidate { color: #6EE7B7; border-color: rgba(16,185,129,0.3); }
 .bulk-btn-consolidate:hover { background: rgba(16,185,129,0.15); }
+.bulk-btn-date { color: #93C5FD; border-color: rgba(147,197,253,0.3); }
+.bulk-btn-date:hover { background: rgba(147,197,253,0.15); }
+
+.bulk-date-input {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: var(--radius-sm);
+  color: #fff;
+  padding: 6px 8px;
+  font-size: 13px;
+  font-family: inherit;
+  height: 34px;
+}
+.bulk-date-input::-webkit-calendar-picker-indicator { filter: invert(1); opacity: 0.8; cursor: pointer; }
+
+@media (max-width: 430px) {
+  .bulk-btn span { display: none; }
+  .bulk-btn { padding: 6px 8px; gap: 0; min-width: 32px; justify-content: center; }
+}
 
 /* ============================================================
    FORM COMPONENTS
