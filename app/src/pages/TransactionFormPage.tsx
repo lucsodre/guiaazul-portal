@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { AlertTriangle } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { createTransaction, updateTransaction, getUserTransactions } from '../services/transactionService'
+import { getUserBankAccounts } from '../services/bankAccountService'
 import { TransactionFormData, TransactionType, RecurrenceType } from '../types/transaction'
 import { toInputDate, fromInputDate } from '../utils/date'
 import { formatInputBR } from '../utils/currency'
@@ -48,6 +49,15 @@ export default function TransactionFormPage() {
   const [loadingData, setLoadingData] = useState(isEdit)
   const [error, setError] = useState('')
   const [errors, setErrors] = useState<Partial<Record<keyof TransactionFormData, string>>>({})
+
+  // Pre-fill primary account on create
+  useEffect(() => {
+    if (isEdit || !user) return
+    getUserBankAccounts(user.id).then(accs => {
+      const primary = accs.find(a => a.is_primary && a.is_active) ?? accs.find(a => a.is_active)
+      if (primary) setForm(prev => prev.account_id ? prev : { ...prev, account_id: primary.id })
+    })
+  }, [isEdit, user])
 
   useEffect(() => {
     if (!isEdit || !user || !id) return

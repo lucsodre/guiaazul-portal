@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Sparkles, Search } from 'lucide-react'
+import { Search } from 'lucide-react'
 import { Category } from '../../types/category'
 import { TransactionType } from '../../types/transaction'
 import { getUserCategories } from '../../services/categoryService'
@@ -15,12 +15,11 @@ interface CategorySelectorProps {
   error?: string
 }
 
-export default function CategorySelector({ value, onChange, transactionType, description, error }: CategorySelectorProps) {
+export default function CategorySelector({ value, onChange, transactionType, error }: CategorySelectorProps) {
   const { user } = useAuth()
   const [categories, setCategories] = useState<Category[]>([])
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
-  const [aiLoading, setAiLoading] = useState(false)
 
   const typeForCategory = transactionType === 'transfer' ? undefined : transactionType
 
@@ -63,54 +62,24 @@ export default function CategorySelector({ value, onChange, transactionType, des
     setSearch('')
   }
 
-  async function handleAiSuggest() {
-    if (!description?.trim() || !user) return
-    setAiLoading(true)
-    try {
-      const { suggestCategoryFromDescription } = await import('../../services/aiAgentService')
-      const suggestion = await suggestCategoryFromDescription(description, user.id)
-      if (suggestion?.categoryId) onChange(suggestion.categoryId)
-    } catch {
-      // AI suggestion failed — ignore silently
-    } finally {
-      setAiLoading(false)
-    }
-  }
-
   return (
     <>
       <div className="input-wrapper">
         <label className="input-label">Categoria</label>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button
-            type="button"
-            className={`category-selector-btn ${error ? 'input-error' : ''}`}
-            onClick={() => setOpen(true)}
-          >
-            {selected ? (
-              <>
-                <CategoryIcon name={selected.icon} color={selected.color} size={28} />
-                <span style={{ fontSize: 14, color: 'var(--color-text)' }}>{selected.name}</span>
-              </>
-            ) : (
-              <span style={{ fontSize: 14, color: 'var(--color-text-subtle)' }}>Selecionar categoria</span>
-            )}
-          </button>
-
-          {description && description.length > 3 && (
-            <button
-              type="button"
-              className="btn btn-secondary btn-md"
-              style={{ flexShrink: 0 }}
-              onClick={handleAiSuggest}
-              disabled={aiLoading}
-              title="Sugerir com IA"
-            >
-              <Sparkles size={16} />
-              {aiLoading ? '...' : 'IA'}
-            </button>
+        <button
+          type="button"
+          className={`category-selector-btn ${error ? 'input-error' : ''}`}
+          onClick={() => setOpen(true)}
+        >
+          {selected ? (
+            <>
+              <CategoryIcon name={selected.icon} color={selected.color} size={28} />
+              <span style={{ fontSize: 14, color: 'var(--color-text)' }}>{selected.name}</span>
+            </>
+          ) : (
+            <span style={{ fontSize: 14, color: 'var(--color-text-subtle)' }}>Selecionar categoria</span>
           )}
-        </div>
+        </button>
         {error && <p className="input-error-msg">{error}</p>}
       </div>
 

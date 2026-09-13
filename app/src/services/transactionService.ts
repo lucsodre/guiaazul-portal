@@ -64,8 +64,8 @@ export async function createTransaction(
     const amount = parseFloat(data.amount.replace(/\./g, '').replace(',', '.'))
     if (isNaN(amount) || amount <= 0) return null
 
-    const total = data.installments_total || 1
-    const start = data.installments_start || 1
+    const total = data.is_recurring ? (data.installments_total || 1) : 1
+    const start = data.is_recurring ? (data.installments_start || 1) : 1
 
     if (data.is_recurring && (start < 1 || start > total)) return null
 

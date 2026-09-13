@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Search, X, AlertTriangle } from 'lucide-react'
+import { Plus, Search, X, AlertTriangle, CalendarCheck } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import {
   getUserTransactions, deleteTransaction, deleteTransactionsBatch,
@@ -71,6 +71,8 @@ export default function TransactionsPage() {
   const [confirmDelete, setConfirmDelete] = useState<{ ids: string[]; label: string } | null>(null)
   const [confirmLoading, setConfirmLoading] = useState(false)
 
+  const pendingScrollRef = useRef<string | null>(null)
+
   const startDate = getMonthStart(currentDate)
   const endDate   = getMonthEnd(currentDate)
 
@@ -103,6 +105,29 @@ export default function TransactionsPage() {
   }, [user, startDate, endDate, filterStatus])
 
   useEffect(() => { load() }, [load])
+
+  // Execute pending scroll after load completes (e.g. after switching month)
+  useEffect(() => {
+    if (loading || !pendingScrollRef.current) return
+    const target = pendingScrollRef.current
+    pendingScrollRef.current = null
+    setTimeout(() => {
+      document.getElementById(`section-${target}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 100)
+  }, [loading])
+
+  function scrollToToday() {
+    const today = new Date()
+    const todayStr = today.toISOString().split('T')[0]
+    const sameMonth = currentDate.getFullYear() === today.getFullYear()
+      && currentDate.getMonth() === today.getMonth()
+    if (sameMonth) {
+      document.getElementById(`section-${todayStr}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    } else {
+      pendingScrollRef.current = todayStr
+      setCurrentDate(today)
+    }
+  }
 
   const previousBalance = useMemo(() => {
     const relevantAccs = filterAccount ? accounts.filter(a => a.id === filterAccount) : accounts
@@ -211,13 +236,23 @@ export default function TransactionsPage() {
       <TopBar
         title="Transações"
         actions={
-          <button
-            className="topbar-back"
-            onClick={() => setSearchOpen(v => !v)}
-            aria-label="Buscar"
-          >
-            {searchOpen ? <X size={18} /> : <Search size={18} />}
-          </button>
+          <>
+            <button
+              className="topbar-back"
+              onClick={scrollToToday}
+              aria-label="Ir para hoje"
+              title="Ir para hoje"
+            >
+              <CalendarCheck size={18} />
+            </button>
+            <button
+              className="topbar-back"
+              onClick={() => setSearchOpen(v => !v)}
+              aria-label="Buscar"
+            >
+              {searchOpen ? <X size={18} /> : <Search size={18} />}
+            </button>
+          </>
         }
       />
 
@@ -313,7 +348,7 @@ export default function TransactionsPage() {
         )}
 
         {!loading && groups.map(({ date, items, balance }) => (
-          <div key={date} style={{ marginBottom: 8 }}>
+          <div key={date} id={`section-${date}`} style={{ marginBottom: 8 }}>
             <div className="section-header-row" style={{ paddingTop: 8 }}>
               <p className="section-header">{formatDateHeader(date)}</p>
               <span
