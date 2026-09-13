@@ -6,6 +6,7 @@ import {
 import { useAuth } from '../contexts/AuthContext'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
 import TopBar from '../components/layout/TopBar'
+import PluggySync from '../components/settings/PluggySync'
 
 export default function SettingsPage() {
   const { user, signOut, deleteAccount } = useAuth()
@@ -75,6 +76,14 @@ export default function SettingsPage() {
             <Item icon={Wallet} label="Contas Bancárias" onClick={() => navigate('/app/settings/accounts')} />
             <Item icon={Mail}   label="Fale Conosco"    onClick={() => window.location.href = 'mailto:contato@guiaazulfinancas.com.br'} />
             <Item icon={Lock}   label="Alterar Senha"   onClick={() => navigate('/app/settings/change-password')} />
+          </div>
+        </div>
+
+        {/* Sincronização bancária */}
+        <div>
+          <p className="section-header">SINCRONIZAÇÃO BANCÁRIA</p>
+          <div className="settings-section" style={{ padding: 16 }}>
+            <PluggySync />
           </div>
         </div>
 

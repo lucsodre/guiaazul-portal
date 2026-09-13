@@ -2,3 +2,6 @@ app/node_modules/
 app/dist/
 app/.env
 app/*.local
+
+# Scripts com credenciais locais
+scripts/test-pluggy.mjs

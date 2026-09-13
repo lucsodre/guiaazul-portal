@@ -1,0 +1,30 @@
+name: Pluggy Daily Sync
+
+on:
+  schedule:
+    # Executa às 06:00 UTC = 03:00 BRT todos os dias
+    - cron: '0 6 * * *'
+  # Permite trigger manual pelo painel do GitHub Actions
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Pluggy Sync
+        run: |
+          RESPONSE=$(curl -s -o /tmp/sync_response.json -w "%{http_code}" \
+            -X POST \
+            "${{ secrets.VITE_SUPABASE_URL }}/functions/v1/sync-pluggy" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{}')
+
+          echo "HTTP Status: $RESPONSE"
+          echo "Response:"
+          cat /tmp/sync_response.json
+
+          if [ "$RESPONSE" != "200" ]; then
+            echo "Sync falhou com status $RESPONSE"
+            exit 1
+          fi
