@@ -1117,6 +1117,15 @@ a:hover {
   .app-main {
     padding-bottom: var(--bottombar-height);
   }
+
+  /* Compact transaction card for narrow screens */
+  .tx-card {
+    padding: 10px 10px;
+    gap: 8px;
+  }
+  .tx-card-amount {
+    font-size: 13px;
+  }
 }
 
 /* Desktop page padding */
