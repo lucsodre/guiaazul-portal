@@ -16,6 +16,7 @@ jobs:
           RESPONSE=$(curl -s -o /tmp/sync_response.json -w "%{http_code}" \
             -X POST \
             "${{ secrets.VITE_SUPABASE_URL }}/functions/v1/sync-pluggy" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
             -H "X-Cron-Secret: ${{ secrets.CRON_SECRET }}" \
             -H "Content-Type: application/json" \
             -d '{}')
