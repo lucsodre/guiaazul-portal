@@ -4,7 +4,7 @@ const PLUGGY_API = 'https://api.pluggy.ai'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-cron-secret',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
@@ -84,14 +84,15 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     )
 
-    // Autenticação: service-role (cron) ou JWT de usuário (trigger manual)
-    const authHeader = req.headers.get('Authorization') ?? ''
-    const token = authHeader.replace('Bearer ', '').trim()
-    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const isCron = token === serviceKey
+    // Autenticação: CRON_SECRET header (cron) ou JWT de usuário (trigger manual)
+    const cronSecret = req.headers.get('X-Cron-Secret') ?? ''
+    const expectedCronSecret = Deno.env.get('CRON_SECRET') ?? ''
+    const isCron = !!(cronSecret && expectedCronSecret && cronSecret === expectedCronSecret)
 
     let userId: string | null = null
     if (!isCron) {
+      const authHeader = req.headers.get('Authorization') ?? ''
+      const token = authHeader.replace('Bearer ', '').trim()
       const { data: { user }, error } = await supabase.auth.getUser(token)
       if (error || !user) return json({ error: 'Não autorizado' }, 401)
       userId = user.id
