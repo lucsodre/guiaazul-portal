@@ -61,23 +61,25 @@ export default function TransactionCard({
 
       {/* Description + meta */}
       <div className="tx-card-body">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
-          <p className="tx-card-description truncate">{tx.description || 'Sem descrição'}</p>
-          <span className="tx-card-amount" style={{ color: amountColor }}>
+        {/* Linha 1: descrição (largura total) */}
+        <p className="tx-card-description">{tx.description || 'Sem descrição'}</p>
+        {/* Linha 2: meta à esquerda + valor à direita */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 3 }}>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', minWidth: 0 }}>
+            <span className="tx-card-meta truncate">{tx.category?.name || 'Sem categoria'}</span>
+            {tx.account?.name && (
+              <>
+                <span style={{ color: 'var(--color-border)', fontSize: 11, flexShrink: 0 }}>•</span>
+                <span className="tx-card-meta truncate">{tx.account.name}</span>
+              </>
+            )}
+            {isPending && (
+              <span className="badge badge-warning badge-sm" style={{ flexShrink: 0 }}>pendente</span>
+            )}
+          </div>
+          <span className="tx-card-amount" style={{ color: amountColor, flexShrink: 0 }}>
             {amountPrefix}{formatBRL(amount)}
           </span>
-        </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 3 }}>
-          <span className="tx-card-meta">{tx.category?.name || 'Sem categoria'}</span>
-          {tx.account?.name && (
-            <>
-              <span style={{ color: 'var(--color-border)', fontSize: 11 }}>•</span>
-              <span className="tx-card-meta">{tx.account.name}</span>
-            </>
-          )}
-          {isPending && (
-            <span className="badge badge-warning badge-sm" style={{ marginLeft: 'auto' }}>pendente</span>
-          )}
         </div>
       </div>
 
