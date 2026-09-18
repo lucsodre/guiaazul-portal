@@ -65,14 +65,6 @@ function ProgressBar({ cat }: { cat: CategoryBudgetProgress }) {
         <span style={{ marginLeft: 'auto' }}>limite {formatBRL(cat.effective_amount)}</span>
       </div>
 
-      {/* Carryover note */}
-      {cat.carryover !== 0 && (
-        <p style={{ marginTop: 4, fontSize: 10, color: cat.carryover > 0 ? 'var(--color-income)' : 'var(--color-expense)', fontVariantNumeric: 'tabular-nums' }}>
-          {cat.carryover > 0
-            ? `↑ Saldo anterior: +${formatBRL(cat.carryover)}`
-            : `↓ Déficit anterior: ${formatBRL(Math.abs(cat.carryover))}`}
-        </p>
-      )}
     </div>
   )
 }
@@ -220,15 +212,24 @@ export default function BudgetPage() {
 
             {/* Income summary (if configured) */}
             {summary.total_income_planned > 0 && (
-              <div style={{ background: 'var(--color-income-bg)', border: '1px solid #A7F3D0', borderRadius: 'var(--radius-md)', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <p style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--color-income-dark)', marginBottom: 1 }}>Receita do mês</p>
-                  <p style={{ fontSize: 14, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: 'var(--color-income)' }}>{formatBRL(summary.total_income_received)}</p>
+              <div style={{ background: 'var(--color-income-bg)', border: '1px solid #A7F3D0', borderRadius: 'var(--radius-md)', padding: '10px 14px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <p style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--color-income-dark)', marginBottom: 1 }}>Receita do mês</p>
+                    <p style={{ fontSize: 14, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: 'var(--color-income)' }}>{formatBRL(summary.total_income_received)}</p>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ fontSize: 10, color: 'var(--color-income-dark)', opacity: 0.8 }}>Prevista</p>
+                    <p style={{ fontSize: 13, fontWeight: 600, fontVariantNumeric: 'tabular-nums', color: 'var(--color-income-dark)' }}>{formatBRL(summary.total_income_planned)}</p>
+                  </div>
                 </div>
-                <div style={{ textAlign: 'right' }}>
-                  <p style={{ fontSize: 10, color: 'var(--color-income-dark)', opacity: 0.8 }}>Prevista</p>
-                  <p style={{ fontSize: 13, fontWeight: 600, fontVariantNumeric: 'tabular-nums', color: 'var(--color-income-dark)' }}>{formatBRL(summary.total_income_planned)}</p>
-                </div>
+                {summary.income_carryover !== 0 && (
+                  <p style={{ marginTop: 6, fontSize: 11, fontVariantNumeric: 'tabular-nums', color: summary.income_carryover > 0 ? 'var(--color-income)' : 'var(--color-expense)' }}>
+                    {summary.income_carryover > 0
+                      ? `↑ Saldo do mês anterior: +${formatBRL(summary.income_carryover)}`
+                      : `↓ Déficit do mês anterior: ${formatBRL(Math.abs(summary.income_carryover))}`}
+                  </p>
+                )}
               </div>
             )}
 

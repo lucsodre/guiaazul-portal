@@ -44,14 +44,13 @@ export interface CategoryBudgetMonth {
 
 export interface CategoryBudgetProgress {
   category: Category
-  base_amount: number       // limite configurado para o mês
-  carryover: number         // saldo/déficit trazido do mês anterior
-  effective_amount: number  // base_amount + carryover
+  base_amount: number       // limite configurado para o mês (reseta todo mês)
+  effective_amount: number  // = base_amount (sem carryover por categoria)
   consolidated: number      // gasto consolidado
   pending: number           // gasto pendente (não consolidado)
   total_spent: number       // consolidated + pending
-  remaining: number         // effective_amount - total_spent (pode ser negativo)
-  percentage: number        // total_spent / effective_amount (pode ser > 1)
+  remaining: number         // base_amount - total_spent (pode ser negativo)
+  percentage: number        // total_spent / base_amount (pode ser > 1)
   status: 'ok' | 'warning' | 'over'
 }
 
@@ -74,8 +73,8 @@ export interface MonthBudgetSummary {
   year_month: string
   total_income_planned: number   // soma dos income_plans ativos
   total_income_received: number  // receitas consolidadas no mês
-  total_budgeted: number         // soma dos limites base (sem carryover)
-  total_effective: number        // soma dos limites efetivos (com carryover)
+  income_carryover: number       // saldo líquido do mês anterior (receita - gastos consolidados)
+  total_budgeted: number         // soma dos limites das categorias
   total_consolidated: number     // soma de gastos consolidados (inclui não orçados)
   total_pending: number          // soma de gastos pendentes (inclui não orçados)
   categories: CategoryBudgetProgress[]

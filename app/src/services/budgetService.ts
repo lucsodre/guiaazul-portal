@@ -131,11 +131,11 @@ export async function getMonthBudgetSummary(
   const [
     { data: budgets },
     { data: currentOverrides },
-    { data: prevOverrides },
     { data: currentTxs },
-    { data: prevTxs },
+    { data: prevExpenseTxs },
     { data: incomePlans },
     { data: incomeTxs },
+    { data: prevIncomeTxs },
   ] = await Promise.all([
     supabase
       .from('category_budgets')
@@ -148,11 +148,6 @@ export async function getMonthBudgetSummary(
       .eq('user_id', userId)
       .eq('year_month', yearMonth),
     supabase
-      .from('category_budget_months')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('year_month', prevYM),
-    supabase
       .from('transactions')
       .select('category_id, amount, is_consolidated, category:categories(id, name, color, icon)')
       .eq('user_id', userId)
@@ -161,7 +156,7 @@ export async function getMonthBudgetSummary(
       .lte('transaction_date', monthEnd),
     supabase
       .from('transactions')
-      .select('category_id, amount, is_consolidated')
+      .select('amount, is_consolidated')
       .eq('user_id', userId)
       .eq('type', 'expense')
       .gte('transaction_date', prevYM)
@@ -179,9 +174,17 @@ export async function getMonthBudgetSummary(
       .eq('is_consolidated', true)
       .gte('transaction_date', yearMonth)
       .lte('transaction_date', monthEnd),
+    supabase
+      .from('transactions')
+      .select('amount')
+      .eq('user_id', userId)
+      .eq('type', 'income')
+      .eq('is_consolidated', true)
+      .gte('transaction_date', prevYM)
+      .lte('transaction_date', prevEnd),
   ])
 
-  // Group transactions by category
+  // Group current month expenses by category
   type SpendMap = Record<string, { consolidated: number; pending: number }>
 
   function groupSpending(txs: Array<{ category_id: string | null; amount: number; is_consolidated: boolean }> | null): SpendMap {
@@ -194,40 +197,32 @@ export async function getMonthBudgetSummary(
     }, {})
   }
 
-  const spending     = groupSpending(currentTxs)
-  const prevSpending = groupSpending(prevTxs)
+  const spending = groupSpending(currentTxs)
 
-  // Build progress for each budgeted category
+  // Income carryover: prev month net (income received - expenses consolidated)
+  const prevIncomeReceived   = (prevIncomeTxs   || []).reduce((s, t) => s + Math.abs(t.amount), 0)
+  const prevExpConsolidated  = (prevExpenseTxs  || [])
+    .filter((t) => t.is_consolidated)
+    .reduce((s, t) => s + Math.abs(t.amount), 0)
+  const income_carryover = prevIncomeReceived - prevExpConsolidated
+
+  // Build progress for each budgeted category (no per-category carryover — resets monthly)
   const categories: CategoryBudgetProgress[] = (budgets || []).map((budget) => {
-    const catId       = budget.category_id as string
-    const override    = (currentOverrides || []).find((o) => o.category_id === catId)
-    const prevOverride = (prevOverrides || []).find((o) => o.category_id === catId)
+    const catId    = budget.category_id as string
+    const override = (currentOverrides || []).find((o) => o.category_id === catId)
 
-    // Previous month effective limit
-    const prevBase     = prevOverride ? prevOverride.base_amount : budget.monthly_amount
-    const prevCarry    = prevOverride ? prevOverride.carryover   : 0
-    const prevEffective = prevBase + prevCarry
-
-    // Previous month spending
-    const prevSpent = (prevSpending[catId]?.consolidated ?? 0) + (prevSpending[catId]?.pending ?? 0)
-
-    // Carryover into current month (positive = saved, negative = overspent)
-    const carryover = prevEffective - prevSpent
-
-    // Current month effective limit
     const base_amount     = override ? override.base_amount : budget.monthly_amount
-    const effective_amount = base_amount + carryover
+    const effective_amount = base_amount  // categories reset every month
 
     const consolidated = spending[catId]?.consolidated ?? 0
     const pending      = spending[catId]?.pending      ?? 0
     const total_spent  = consolidated + pending
-    const remaining    = effective_amount - total_spent
-    const percentage   = effective_amount > 0 ? total_spent / effective_amount : (total_spent > 0 ? 1 : 0)
+    const remaining    = base_amount - total_spent
+    const percentage   = base_amount > 0 ? total_spent / base_amount : (total_spent > 0 ? 1 : 0)
 
     return {
-      category:         budget.category,
+      category: budget.category,
       base_amount,
-      carryover,
       effective_amount,
       consolidated,
       pending,
@@ -276,7 +271,6 @@ export async function getMonthBudgetSummary(
   const total_income_planned  = (incomePlans || []).reduce((s, p) => s + p.amount, 0)
   const total_income_received = (incomeTxs  || []).reduce((s, t) => s + Math.abs(t.amount), 0)
   const total_budgeted        = categories.reduce((s, c) => s + c.base_amount, 0)
-  const total_effective       = categories.reduce((s, c) => s + c.effective_amount, 0)
   const total_consolidated    = categories.reduce((s, c) => s + c.consolidated, 0) + untracked.consolidated
   const total_pending         = categories.reduce((s, c) => s + c.pending, 0)      + untracked.pending
 
@@ -284,8 +278,8 @@ export async function getMonthBudgetSummary(
     year_month: yearMonth,
     total_income_planned,
     total_income_received,
+    income_carryover,
     total_budgeted,
-    total_effective,
     total_consolidated,
     total_pending,
     categories,
