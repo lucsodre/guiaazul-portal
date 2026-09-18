@@ -91,9 +91,9 @@ export default function HomePage() {
             {/* Account breakdown */}
             <div style={{ borderTop: '1px solid rgba(255,255,255,0.2)', paddingTop: 12 }}>
               {(showAllAccounts ? data.accounts : data.accounts.slice(0, 2)).map(acc => (
-                <div key={acc.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                  <span style={{ fontSize: 13, opacity: 0.85 }}>{acc.name}</span>
-                  <span style={{ fontSize: 13, fontWeight: 700 }}>{formatBRLCompact(acc.current_balance)}</span>
+                <div key={acc.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                  <span style={{ fontSize: 13, opacity: 0.85, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{acc.name}</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, flexShrink: 0 }}>{formatBRLCompact(acc.current_balance)}</span>
                 </div>
               ))}
               {data.accounts.length > 2 && (
@@ -111,9 +111,9 @@ export default function HomePage() {
         {/* Budget thermometer */}
         {loading ? <SkeletonCard lines={3} /> : data?.budgetUsage.hasIncome && (
           <div className="card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-              <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text-heading)' }}>Gastos do mês</span>
-              <span style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text-heading)', flex: 1, minWidth: 0 }}>Gastos do mês</span>
+              <span style={{ fontSize: 13, color: 'var(--color-text-muted)', flexShrink: 0, whiteSpace: 'nowrap' }}>
                 {data.budgetUsage.percentage}% da receita
               </span>
             </div>
@@ -123,11 +123,11 @@ export default function HomePage() {
                 style={{ width: `${Math.min(budgetProgress, 100)}%` }}
               />
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
-              <span style={{ fontSize: 12, color: 'var(--color-expense)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginTop: 8 }}>
+              <span style={{ fontSize: 12, color: 'var(--color-expense)', whiteSpace: 'nowrap' }}>
                 Gasto: {formatBRLCompact(data.budgetUsage.spent)}
               </span>
-              <span style={{ fontSize: 12, color: 'var(--color-income)' }}>
+              <span style={{ fontSize: 12, color: 'var(--color-income)', whiteSpace: 'nowrap', flexShrink: 0 }}>
                 Receita: {formatBRLCompact(data.budgetUsage.income)}
               </span>
             </div>
