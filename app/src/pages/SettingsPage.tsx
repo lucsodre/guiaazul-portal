@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  Tag, Wallet, Mail, Lock, Trash2, ChevronRight, LogOut, Info,
+  Tag, Wallet, Mail, Lock, Trash2, ChevronRight, LogOut, Info, PieChart,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
@@ -72,10 +72,11 @@ export default function SettingsPage() {
         <div>
           <p className="section-header">CONFIGURAÇÕES</p>
           <div className="settings-section">
-            <Item icon={Tag}    label="Categorias"      onClick={() => navigate('/app/settings/categories')} />
-            <Item icon={Wallet} label="Contas Bancárias" onClick={() => navigate('/app/settings/accounts')} />
-            <Item icon={Mail}   label="Fale Conosco"    onClick={() => window.location.href = 'mailto:contato@guiaazulfinancas.com.br'} />
-            <Item icon={Lock}   label="Alterar Senha"   onClick={() => navigate('/app/settings/change-password')} />
+            <Item icon={Tag}      label="Categorias"      onClick={() => navigate('/app/settings/categories')} />
+            <Item icon={Wallet}   label="Contas Bancárias" onClick={() => navigate('/app/settings/accounts')} />
+            <Item icon={PieChart} label="Relatórios"     onClick={() => navigate('/app/reports')} />
+            <Item icon={Mail}     label="Fale Conosco"    onClick={() => window.location.href = 'mailto:contato@guiaazulfinancas.com.br'} />
+            <Item icon={Lock}     label="Alterar Senha"   onClick={() => navigate('/app/settings/change-password')} />
           </div>
         </div>
 

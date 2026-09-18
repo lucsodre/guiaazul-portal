@@ -7,6 +7,8 @@ import HomePage from './pages/HomePage'
 import TransactionsPage from './pages/TransactionsPage'
 import TransactionFormPage from './pages/TransactionFormPage'
 import ReportsPage from './pages/ReportsPage'
+import BudgetPage from './pages/BudgetPage'
+import BudgetConfigPage from './pages/BudgetConfigPage'
 import SettingsPage from './pages/SettingsPage'
 import CategoriesPage from './pages/CategoriesPage'
 import AccountsPage from './pages/AccountsPage'
@@ -69,6 +71,8 @@ function AppRoutes() {
         <Route path="transactions/new" element={<TransactionFormPage />} />
         <Route path="transactions/:id" element={<TransactionFormPage />} />
         <Route path="reports" element={<ReportsPage />} />
+        <Route path="budget" element={<BudgetPage />} />
+        <Route path="budget/config" element={<BudgetConfigPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="settings/categories" element={<CategoriesPage />} />
         <Route path="settings/accounts" element={<AccountsPage />} />
