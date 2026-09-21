@@ -10,6 +10,16 @@ import { getMonthBudgetSummary } from '../services/budgetService'
 import { formatBRL } from '../utils/currency'
 import type { MonthBudgetSummary, CategoryBudgetProgress, UntrackedSummary } from '../types/budget'
 
+function useWindowWidth() {
+  const [width, setWidth] = useState(window.innerWidth)
+  useEffect(() => {
+    const handler = () => setWidth(window.innerWidth)
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [])
+  return width
+}
+
 function ProgressBar({ cat }: { cat: CategoryBudgetProgress }) {
   const eff = cat.effective_amount
 
@@ -135,6 +145,7 @@ function UntrackedCard({ data }: { data: UntrackedSummary }) {
 export default function BudgetPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const isMobile = useWindowWidth() < 768
 
   const [date,    setDate]    = useState(new Date())
   const [loading, setLoading] = useState(true)
@@ -172,7 +183,7 @@ export default function BudgetPage() {
       <TopBar title="Orçamento" actions={configAction} />
       <MonthPicker currentDate={date} onChange={setDate} />
 
-      <div className="page-container" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div className="page-container" style={{ display: 'flex', flexDirection: 'column', gap: 12, ...(isMobile ? { padding: '8px' } : {}) }}>
 
         {error && <div className="error-banner">{error}</div>}
 
