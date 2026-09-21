@@ -14,9 +14,24 @@ import DonutChart from '../components/ui/DonutChart'
 import TopBar from '../components/layout/TopBar'
 import { SkeletonCard, Skeleton } from '../components/ui/Skeleton'
 
+function useWindowWidth() {
+  const [width, setWidth] = useState(window.innerWidth)
+  useEffect(() => {
+    const handler = () => setWidth(window.innerWidth)
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [])
+  return width
+}
+
 export default function HomePage() {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const windowWidth = useWindowWidth()
+  const isMobile = windowWidth < 768
+
+  const cardPad = isMobile ? { padding: '12px' } : {}
+  const cardLgPad = isMobile ? { padding: '14px' } : {}
 
   const [data, setData] = useState<DashboardData | null>(null)
   const [categoryExpenses, setCategoryExpenses] = useState<CategoryExpenseItem[]>([])
@@ -70,7 +85,7 @@ export default function HomePage() {
         }
       />
 
-      <div className="page-container" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div className="page-container" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 16, ...(isMobile ? { padding: '10px' } : {}) }}>
         {error && (
           <div className="error-banner">
             <AlertTriangle size={16} />
@@ -80,11 +95,11 @@ export default function HomePage() {
 
         {/* Total Balance Card */}
         {loading ? <SkeletonCard lines={4} /> : data && (
-          <div className="card card-lg" style={{ background: 'var(--color-primary)', color: '#fff' }}>
+          <div className="card card-lg" style={{ background: 'var(--color-primary)', color: '#fff', ...cardLgPad }}>
             <p style={{ fontSize: 12, fontWeight: 600, opacity: 0.7, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
               Saldo Total
             </p>
-            <p style={{ fontSize: 32, fontWeight: 800, letterSpacing: '-0.5px', marginBottom: 16 }}>
+            <p style={{ fontSize: isMobile ? 26 : 32, fontWeight: 800, letterSpacing: '-0.5px', marginBottom: 12 }}>
               {formatBRL(data.totalBalance)}
             </p>
 
@@ -92,8 +107,8 @@ export default function HomePage() {
             <div style={{ borderTop: '1px solid rgba(255,255,255,0.2)', paddingTop: 12 }}>
               {(showAllAccounts ? data.accounts : data.accounts.slice(0, 2)).map(acc => (
                 <div key={acc.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                  <span style={{ fontSize: 13, opacity: 0.85, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{acc.name}</span>
-                  <span style={{ fontSize: 13, fontWeight: 700, flexShrink: 0 }}>{formatBRLCompact(acc.current_balance)}</span>
+                  <span style={{ fontSize: isMobile ? 12 : 13, opacity: 0.85, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{acc.name}</span>
+                  <span style={{ fontSize: isMobile ? 12 : 13, fontWeight: 700, flexShrink: 0 }}>{formatBRLCompact(acc.current_balance)}</span>
                 </div>
               ))}
               {data.accounts.length > 2 && (
@@ -110,7 +125,7 @@ export default function HomePage() {
 
         {/* Budget thermometer */}
         {loading ? <SkeletonCard lines={3} /> : data?.budgetUsage.hasIncome && (
-          <div className="card">
+          <div className="card" style={cardPad}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginBottom: 8 }}>
               <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text-heading)', flex: 1, minWidth: 0 }}>Gastos do mês</span>
               <span style={{ fontSize: 13, color: 'var(--color-text-muted)', flexShrink: 0, whiteSpace: 'nowrap' }}>
@@ -136,7 +151,7 @@ export default function HomePage() {
 
         {/* Upcoming transactions */}
         {loading ? <SkeletonCard lines={4} /> : (data?.upcomingTransactions.length ?? 0) > 0 && (
-          <div className="card">
+          <div className="card" style={cardPad}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
               <Clock size={16} color="var(--color-warning)" />
               <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text-heading)' }}>Próximos vencimentos</span>
@@ -169,7 +184,7 @@ export default function HomePage() {
 
         {/* Category donut */}
         {loading ? <SkeletonCard lines={5} /> : categoryExpenses.length > 0 && (
-          <div className="card">
+          <div className="card" style={cardPad}>
             <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text-heading)', marginBottom: 16 }}>
               Gastos por categoria
             </p>
@@ -200,7 +215,7 @@ export default function HomePage() {
 
         {/* Recent transactions */}
         {loading ? <SkeletonCard lines={5} /> : (data?.recentTransactions.length ?? 0) > 0 && (
-          <div className="card">
+          <div className="card" style={cardPad}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text-heading)' }}>Movimentações recentes</p>
               <button
