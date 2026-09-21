@@ -235,8 +235,8 @@ export default function HomePage() {
                     color={(tx as any).category?.color || 'var(--color-text-subtle)'}
                     size={32}
                   />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p className="truncate" style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text)' }}>
+                  <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {tx.description || (tx.type === 'income' ? 'Receita' : tx.type === 'expense' ? 'Despesa' : 'Transferência')}
                     </p>
                     <p style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
