@@ -77,7 +77,7 @@
   --bottombar-height:     64px;
   --content-max-width:    1200px;
   --page-padding:         24px;
-  --page-padding-mobile:  16px;
+  --page-padding-mobile:  10px;
 }
 
 /* ---------- Reset ---------- */
@@ -1116,6 +1116,14 @@ a:hover {
 @media (max-width: 767px) {
   .app-main {
     padding-bottom: var(--bottombar-height);
+  }
+
+  /* Compact cards for narrow screens */
+  .card {
+    padding: 12px;
+  }
+  .card-lg {
+    padding: 14px;
   }
 
   /* Compact transaction card for narrow screens */
