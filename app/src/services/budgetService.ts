@@ -136,6 +136,7 @@ export async function getMonthBudgetSummary(
     { data: incomePlans },
     { data: incomeTxs },
     { data: prevIncomeTxs },
+    { data: allCategories },
   ] = await Promise.all([
     supabase
       .from('category_budgets')
@@ -149,7 +150,7 @@ export async function getMonthBudgetSummary(
       .eq('year_month', yearMonth),
     supabase
       .from('transactions')
-      .select('category_id, amount, is_consolidated, category:categories(id, name, color, icon)')
+      .select('category_id, amount, is_consolidated')
       .eq('user_id', userId)
       .eq('type', 'expense')
       .gte('transaction_date', yearMonth)
@@ -182,46 +183,88 @@ export async function getMonthBudgetSummary(
       .eq('is_consolidated', true)
       .gte('transaction_date', prevYM)
       .lte('transaction_date', prevEnd),
+    // All categories (system + user's own) to resolve parent hierarchy
+    supabase
+      .from('categories')
+      .select('id, name, parent_id, color, icon')
+      .or(`user_id.is.null,user_id.eq.${userId}`),
   ])
 
-  // Group current month expenses by category
-  type SpendMap = Record<string, { consolidated: number; pending: number }>
+  // ── Category hierarchy ────────────────────────────────────────────────────
 
-  function groupSpending(txs: Array<{ category_id: string | null; amount: number; is_consolidated: boolean }> | null): SpendMap {
-    return (txs || []).reduce<SpendMap>((acc, tx) => {
-      const key = tx.category_id || '__none__'
-      if (!acc[key]) acc[key] = { consolidated: 0, pending: 0 }
-      if (tx.is_consolidated) acc[key].consolidated += Math.abs(tx.amount)
-      else                     acc[key].pending     += Math.abs(tx.amount)
-      return acc
-    }, {})
+  type CatInfo = { id: string; name: string; parent_id: string | null; color?: string | null; icon?: string | null }
+
+  const catMap = new Map<string, CatInfo>()
+  for (const c of (allCategories || [])) catMap.set(c.id, c as CatInfo)
+
+  // Returns the root (parent_id IS NULL) category for any given category id.
+  // Supports one level of nesting (subcategory → parent). If the parent itself
+  // has a parent, keeps walking up (max depth guard = 5).
+  function rootOf(categoryId: string, depth = 0): CatInfo {
+    const cat = catMap.get(categoryId)
+    if (!cat) return { id: categoryId, name: 'Desconhecida', parent_id: null }
+    if (!cat.parent_id || depth >= 5) return cat
+    return rootOf(cat.parent_id, depth + 1)
   }
 
-  const spending = groupSpending(currentTxs)
+  // ── Income carryover ──────────────────────────────────────────────────────
 
-  // Income carryover: prev month net (income received - expenses consolidated)
-  const prevIncomeReceived   = (prevIncomeTxs   || []).reduce((s, t) => s + Math.abs(t.amount), 0)
-  const prevExpConsolidated  = (prevExpenseTxs  || [])
+  const prevIncomeReceived  = (prevIncomeTxs  || []).reduce((s, t) => s + Math.abs(t.amount), 0)
+  const prevExpConsolidated = (prevExpenseTxs || [])
     .filter((t) => t.is_consolidated)
     .reduce((s, t) => s + Math.abs(t.amount), 0)
   const income_carryover = prevIncomeReceived - prevExpConsolidated
 
-  // Build progress for each budgeted category (no per-category carryover — resets monthly)
-  const categories: CategoryBudgetProgress[] = (budgets || []).map((budget) => {
-    const catId    = budget.category_id as string
+  // ── Roll up budgets → root parent level ───────────────────────────────────
+
+  // parentLimitMap  : rootId → aggregate limit
+  // parentCatMap    : rootId → CatInfo (for display)
+  const parentLimitMap = new Map<string, number>()
+  const parentCatMap   = new Map<string, CatInfo>()
+
+  for (const budget of (budgets || [])) {
+    const catId   = budget.category_id as string
+    const root    = rootOf(catId)
+    const rootId  = root.id
+
     const override = (currentOverrides || []).find((o) => o.category_id === catId)
+    const limit    = override ? override.base_amount : budget.monthly_amount
 
-    const base_amount     = override ? override.base_amount : budget.monthly_amount
-    const effective_amount = base_amount  // categories reset every month
+    parentLimitMap.set(rootId, (parentLimitMap.get(rootId) ?? 0) + limit)
+    if (!parentCatMap.has(rootId)) parentCatMap.set(rootId, root)
+  }
 
-    const consolidated = spending[catId]?.consolidated ?? 0
-    const pending      = spending[catId]?.pending      ?? 0
+  // ── Roll up transactions → root parent level ──────────────────────────────
+
+  type Spend = { consolidated: number; pending: number }
+  const spendByParent = new Map<string, Spend>()
+
+  for (const tx of (currentTxs || []) as Array<{ category_id: string | null; amount: number; is_consolidated: boolean }>) {
+    const root   = tx.category_id ? rootOf(tx.category_id) : null
+    const rootId = root?.id ?? '__none__'
+
+    if (!spendByParent.has(rootId)) spendByParent.set(rootId, { consolidated: 0, pending: 0 })
+    const s = spendByParent.get(rootId)!
+    if (tx.is_consolidated) s.consolidated += Math.abs(tx.amount)
+    else                    s.pending      += Math.abs(tx.amount)
+  }
+
+  // ── Build CategoryBudgetProgress array ───────────────────────────────────
+
+  const budgetedRootIds = new Set(parentLimitMap.keys())
+
+  const categories: CategoryBudgetProgress[] = []
+  for (const [rootId, catInfo] of parentCatMap) {
+    const base_amount     = parentLimitMap.get(rootId) ?? 0
+    const effective_amount = base_amount
+    const spend           = spendByParent.get(rootId) ?? { consolidated: 0, pending: 0 }
+    const { consolidated, pending } = spend
     const total_spent  = consolidated + pending
     const remaining    = base_amount - total_spent
     const percentage   = base_amount > 0 ? total_spent / base_amount : (total_spent > 0 ? 1 : 0)
 
-    return {
-      category: budget.category,
+    categories.push({
+      category:        catInfo as any,
       base_amount,
       effective_amount,
       consolidated,
@@ -230,33 +273,32 @@ export async function getMonthBudgetSummary(
       remaining,
       percentage,
       status: percentage > 1 ? 'over' : percentage >= 0.85 ? 'warning' : 'ok',
-    }
-  })
+    })
+  }
 
-  // Untracked: expenses whose category is NOT in any configured budget
-  const budgetedIds = new Set((budgets || []).map((b) => b.category_id))
+  // ── Untracked: root parent NOT in any configured budget ───────────────────
+
   const untrackedMap: Record<string, UntrackedCategory> = {}
 
-  for (const tx of (currentTxs || []) as Array<{
-    category_id: string | null
-    amount: number
-    is_consolidated: boolean
-    category?: { id?: string; name?: string; color?: string; icon?: string } | null
-  }>) {
-    if (tx.category_id && budgetedIds.has(tx.category_id)) continue
-    const key = tx.category_id || '__none__'
+  for (const tx of (currentTxs || []) as Array<{ category_id: string | null; amount: number; is_consolidated: boolean }>) {
+    const root   = tx.category_id ? rootOf(tx.category_id) : null
+    const rootId = root?.id ?? '__none__'
+
+    if (budgetedRootIds.has(rootId)) continue  // accounted for in a budget block
+
+    const key = rootId
     if (!untrackedMap[key]) {
       untrackedMap[key] = {
-        id: tx.category_id || null,
-        name: tx.category?.name || 'Sem categoria',
-        color: tx.category?.color,
-        icon: tx.category?.icon,
+        id:    root?.id    ?? null,
+        name:  root?.name  ?? 'Sem categoria',
+        color: root?.color ?? undefined,
+        icon:  root?.icon  ?? undefined,
         consolidated: 0,
-        pending: 0,
+        pending:      0,
       }
     }
     if (tx.is_consolidated) untrackedMap[key].consolidated += Math.abs(tx.amount)
-    else                     untrackedMap[key].pending     += Math.abs(tx.amount)
+    else                    untrackedMap[key].pending      += Math.abs(tx.amount)
   }
 
   const untrackedCategories = Object.values(untrackedMap).sort(
