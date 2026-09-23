@@ -31,7 +31,7 @@ export default function HomePage() {
   const isMobile = windowWidth < 768
 
   const cardPad = isMobile ? { padding: '12px' } : {}
-  const cardLgPad = isMobile ? { padding: '14px' } : {}
+  const cardLgPad = isMobile ? { padding: '12px' } : {}
 
   const [data, setData] = useState<DashboardData | null>(null)
   const [categoryExpenses, setCategoryExpenses] = useState<CategoryExpenseItem[]>([])
@@ -99,7 +99,7 @@ export default function HomePage() {
             <p style={{ fontSize: 12, fontWeight: 600, opacity: 0.7, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
               Saldo Total
             </p>
-            <p style={{ fontSize: isMobile ? 26 : 32, fontWeight: 800, letterSpacing: '-0.5px', marginBottom: 12 }}>
+            <p style={{ fontSize: isMobile ? 24 : 32, fontWeight: 800, letterSpacing: '-0.5px', marginBottom: 12 }}>
               {formatBRL(data.totalBalance)}
             </p>
 
@@ -188,22 +188,22 @@ export default function HomePage() {
             <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text-heading)', marginBottom: 16 }}>
               Gastos por categoria
             </p>
-            <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: isMobile ? 10 : 20, alignItems: 'flex-start', flexWrap: 'wrap' }}>
               <DonutChart
                 segments={donutSegments}
                 total={totalExpense}
-                size={160}
-                strokeWidth={22}
+                size={isMobile ? 120 : 160}
+                strokeWidth={isMobile ? 18 : 22}
                 centerLabel="Despesas"
                 centerValue={formatBRLCompact(totalExpense)}
               />
-              <div style={{ flex: 1, minWidth: 180, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ flex: 1, minWidth: isMobile ? 110 : 180, display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {categoryExpenses.map(cat => (
-                  <div key={cat.categoryId} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: cat.color, flexShrink: 0 }} />
-                    <span className="truncate" style={{ flex: 1, fontSize: 13, color: 'var(--color-text)' }}>{cat.name}</span>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-text-muted)', flexShrink: 0 }}>{cat.percentage}%</span>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-expense)', flexShrink: 0, minWidth: 70, textAlign: 'right' }}>
+                  <div key={cat.categoryId} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: cat.color, flexShrink: 0 }} />
+                    <span style={{ flex: 1, fontSize: isMobile ? 12 : 13, color: 'var(--color-text)', minWidth: 0, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{cat.name}</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', flexShrink: 0 }}>{cat.percentage}%</span>
+                    <span style={{ fontSize: isMobile ? 12 : 13, fontWeight: 700, color: 'var(--color-expense)', flexShrink: 0, minWidth: isMobile ? 60 : 70, textAlign: 'right' }}>
                       {formatBRLCompact(cat.total)}
                     </span>
                   </div>
@@ -239,7 +239,7 @@ export default function HomePage() {
                     <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {tx.description || (tx.type === 'income' ? 'Receita' : tx.type === 'expense' ? 'Despesa' : 'Transferência')}
                     </p>
-                    <p style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
+                    <p style={{ fontSize: 11, color: 'var(--color-text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {formatDateShort(tx.transaction_date)}{(tx as any).account?.name ? ` · ${(tx as any).account.name}` : ''}
                     </p>
                   </div>
