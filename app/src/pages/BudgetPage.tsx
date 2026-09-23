@@ -38,7 +38,7 @@ function ProgressBar({ cat }: { cat: CategoryBudgetProgress }) {
     : `${Math.round(cat.percentage * 100)}%${cat.status === 'warning' ? ' ⚠' : ''}`
 
   return (
-    <div className="card" style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 0, borderLeft: cat.status === 'over' ? '3px solid var(--color-expense)' : 'none' }}>
+    <div className="card" style={{ padding: '10px 10px', display: 'flex', flexDirection: 'column', gap: 0, borderLeft: cat.status === 'over' ? '3px solid var(--color-expense)' : 'none' }}>
       {/* Header row */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
         <CategoryIcon name={cat.category?.icon} color={cat.category?.color || 'var(--color-primary)'} size={30} />
@@ -85,7 +85,7 @@ function UntrackedCard({ data }: { data: UntrackedSummary }) {
   if (total === 0) return null
 
   return (
-    <div className="card" style={{ padding: '12px 14px', borderLeft: '3px solid var(--color-text-subtle)' }}>
+    <div className="card" style={{ padding: '10px 10px', borderLeft: '3px solid var(--color-text-subtle)' }}>
       <button
         onClick={() => setOpen(!open)}
         style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 8 }}

@@ -166,7 +166,7 @@ export default function HomePage() {
                     size={36}
                   />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <p className="truncate" style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text)' }}>
+                    <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {tx.description}
                     </p>
                     <p style={{ fontSize: 12, color: overdue ? 'var(--color-expense)' : 'var(--color-text-muted)' }}>
