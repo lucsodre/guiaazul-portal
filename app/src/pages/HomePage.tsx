@@ -85,7 +85,7 @@ export default function HomePage() {
         }
       />
 
-      <div className="page-container" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 16, ...(isMobile ? { padding: '10px' } : {}) }}>
+      <div className="page-container" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 16, ...(isMobile ? { padding: '10px', overflowX: 'hidden' } : {}) }}>
         {error && (
           <div className="error-banner">
             <AlertTriangle size={16} />
