@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Search, X, AlertTriangle, CalendarCheck } from 'lucide-react'
+import { Plus, Search, X, AlertTriangle, CalendarCheck, Tag, Check } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import {
   getUserTransactions, deleteTransaction, deleteTransactionsBatch,
@@ -8,8 +8,11 @@ import {
   unconsolidateTransaction,
 } from '../services/transactionService'
 import { getUserBankAccounts } from '../services/bankAccountService'
+import { getAllCategoriesWithHierarchy } from '../services/categoryService'
 import { Transaction } from '../types/transaction'
 import { BankAccount } from '../types/bankAccount'
+import { Category } from '../types/category'
+import CategoryIcon from '../components/ui/CategoryIcon'
 import { formatBRL } from '../utils/currency'
 import { formatDateHeader, getMonthStart, getMonthEnd } from '../utils/date'
 import MonthPicker from '../components/ui/MonthPicker'
@@ -71,6 +74,11 @@ export default function TransactionsPage() {
   const [confirmDelete, setConfirmDelete] = useState<{ ids: string[]; label: string } | null>(null)
   const [confirmLoading, setConfirmLoading] = useState(false)
 
+  const [catFilterOpen, setCatFilterOpen] = useState(false)
+  const [filterCategories, setFilterCategories] = useState<Set<string>>(new Set())
+  const [rootCategories, setRootCategories] = useState<Category[]>([])
+  const [allCatMap, setAllCatMap] = useState<Map<string, Category>>(new Map())
+
   const pendingScrollRef = useRef<string | null>(null)
 
   const startDate = getMonthStart(currentDate)
@@ -105,6 +113,15 @@ export default function TransactionsPage() {
   }, [user, startDate, endDate, filterStatus])
 
   useEffect(() => { load() }, [load])
+
+  useEffect(() => {
+    if (!user) return
+    getAllCategoriesWithHierarchy(user.id).then(cats => {
+      const map = new Map(cats.map(c => [c.id, c]))
+      setAllCatMap(map)
+      setRootCategories(cats.filter(c => !c.parent_id).sort((a, b) => a.name.localeCompare(b.name)))
+    })
+  }, [user])
 
   // Execute pending scroll after load completes (e.g. after switching month)
   useEffect(() => {
@@ -151,8 +168,16 @@ export default function TransactionsPage() {
     if (filterAccount) {
       result = result.filter(tx => tx.account_id === filterAccount)
     }
+    if (filterCategories.size > 0 && allCatMap.size > 0) {
+      result = result.filter(tx => {
+        if (!tx.category_id) return false
+        const rootId = getRootCatId(tx.category_id)
+        return rootId ? filterCategories.has(rootId) : false
+      })
+    }
     return result
-  }, [transactions, searchQuery, filterAccount])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transactions, searchQuery, filterAccount, filterCategories, allCatMap])
 
   const groups = useMemo(() => groupByDate(filtered, previousBalance), [filtered, previousBalance])
 
@@ -174,6 +199,24 @@ export default function TransactionsPage() {
   }
 
   function clearSelection() { setSelected(new Set()) }
+
+  function toggleCategoryFilter(id: string) {
+    setFilterCategories(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  function getRootCatId(catId: string): string | null {
+    let current = allCatMap.get(catId)
+    let depth = 0
+    while (current?.parent_id && depth < 5) {
+      current = allCatMap.get(current.parent_id)
+      depth++
+    }
+    return current?.id ?? null
+  }
 
   const selectedTotal = useMemo(() => {
     return transactions
@@ -244,6 +287,23 @@ export default function TransactionsPage() {
               title="Ir para hoje"
             >
               <CalendarCheck size={18} />
+            </button>
+            <button
+              className="topbar-back"
+              onClick={() => setCatFilterOpen(true)}
+              aria-label="Filtrar por categoria"
+              title="Filtrar por categoria"
+              style={{ position: 'relative' }}
+            >
+              <Tag size={18} style={{ color: filterCategories.size > 0 ? 'var(--color-primary)' : undefined }} />
+              {filterCategories.size > 0 && (
+                <span style={{
+                  position: 'absolute', top: 2, right: 2,
+                  width: 7, height: 7, borderRadius: '50%',
+                  background: 'var(--color-primary)',
+                  border: '1.5px solid var(--color-surface)',
+                }} />
+              )}
             </button>
             <button
               className="topbar-back"
@@ -376,6 +436,82 @@ export default function TransactionsPage() {
           </div>
         ))}
       </div>
+
+      {/* Category filter bottom sheet */}
+      {catFilterOpen && (
+        <>
+          <div
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 40 }}
+            onClick={() => setCatFilterOpen(false)}
+          />
+          <div style={{
+            position: 'fixed', bottom: 0, left: 0, right: 0,
+            background: 'var(--color-surface)',
+            borderRadius: '16px 16px 0 0',
+            zIndex: 50,
+            maxHeight: '72vh',
+            display: 'flex',
+            flexDirection: 'column',
+            boxShadow: 'var(--shadow-xl)',
+          }}>
+            {/* Handle */}
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 4px' }}>
+              <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--color-border)' }} />
+            </div>
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 16px 12px' }}>
+              <span style={{ fontWeight: 700, fontSize: 15, color: 'var(--color-text-heading)' }}>
+                Filtrar por categoria
+                {filterCategories.size > 0 && (
+                  <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 600, color: 'var(--color-primary)' }}>
+                    {filterCategories.size} selecionada{filterCategories.size > 1 ? 's' : ''}
+                  </span>
+                )}
+              </span>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                {filterCategories.size > 0 && (
+                  <button
+                    onClick={() => setFilterCategories(new Set())}
+                    style={{ fontSize: 13, color: 'var(--color-expense)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}
+                  >
+                    Limpar
+                  </button>
+                )}
+                <button
+                  onClick={() => setCatFilterOpen(false)}
+                  style={{ color: 'var(--color-text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex' }}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+            {/* List */}
+            <div style={{ overflowY: 'auto', flex: 1, padding: '0 12px 32px' }}>
+              {rootCategories.map(cat => {
+                const isSelected = filterCategories.has(cat.id)
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => toggleCategoryFilter(cat.id)}
+                    style={{
+                      width: '100%', display: 'flex', alignItems: 'center', gap: 12,
+                      padding: '9px 10px', borderRadius: 'var(--radius-md)', marginBottom: 2,
+                      background: isSelected ? 'var(--color-primary-bg)' : 'transparent',
+                      border: 'none', cursor: 'pointer', textAlign: 'left',
+                    }}
+                  >
+                    <CategoryIcon name={cat.icon} color={cat.color} size={28} />
+                    <span style={{ flex: 1, fontSize: 14, fontWeight: isSelected ? 600 : 400, color: isSelected ? 'var(--color-primary)' : 'var(--color-text)' }}>
+                      {cat.name}
+                    </span>
+                    {isSelected && <Check size={16} color="var(--color-primary)" />}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </>
+      )}
 
       {/* FAB */}
       {!selectMode && (

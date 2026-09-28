@@ -56,6 +56,19 @@ export async function getAllUserCategories(userId: string): Promise<Category[]> 
   return getUserCategories(userId)
 }
 
+// Returns all categories (system + user's own) with hierarchy fields, used for
+// resolving subcategory → root parent in client-side filters.
+export async function getAllCategoriesWithHierarchy(userId: string): Promise<Category[]> {
+  try {
+    const { data, error } = await supabase
+      .from('categories')
+      .select('id, name, parent_id, color, icon, type, is_default')
+      .or(`user_id.is.null,user_id.eq.${userId}`)
+    if (error) return []
+    return (data || []) as Category[]
+  } catch { return [] }
+}
+
 export async function getCategoryById(categoryId: string): Promise<Category | null> {
   try {
     const { data, error } = await supabase.from('categories').select('*').eq('id', categoryId).single()
