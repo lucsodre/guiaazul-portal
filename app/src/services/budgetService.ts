@@ -18,10 +18,6 @@ function endOfMonthStr(date: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-function prevMonthDate(date: Date): Date {
-  return new Date(date.getFullYear(), date.getMonth() - 1, 1)
-}
-
 // ── Income Plans ──────────────────────────────────────────────────────────────
 
 export async function getIncomePlans(userId: string): Promise<IncomePlan[]> {
@@ -123,19 +119,14 @@ export async function getMonthBudgetSummary(
 ): Promise<MonthBudgetSummary> {
   const yearMonth  = toYearMonth(date)
   const monthEnd   = endOfMonthStr(date)
-  const prevDate   = prevMonthDate(date)
-  const prevYM     = toYearMonth(prevDate)
-  const prevEnd    = endOfMonthStr(prevDate)
 
   // Parallel fetches
   const [
     { data: budgets },
     { data: currentOverrides },
     { data: currentTxs },
-    { data: prevExpenseTxs },
     { data: incomePlans },
     { data: incomeTxs },
-    { data: prevIncomeTxs },
     { data: allCategories },
   ] = await Promise.all([
     supabase
@@ -156,13 +147,6 @@ export async function getMonthBudgetSummary(
       .gte('transaction_date', yearMonth)
       .lte('transaction_date', monthEnd),
     supabase
-      .from('transactions')
-      .select('amount, is_consolidated')
-      .eq('user_id', userId)
-      .eq('type', 'expense')
-      .gte('transaction_date', prevYM)
-      .lte('transaction_date', prevEnd),
-    supabase
       .from('income_plans')
       .select('amount')
       .eq('user_id', userId)
@@ -175,14 +159,6 @@ export async function getMonthBudgetSummary(
       .eq('is_consolidated', true)
       .gte('transaction_date', yearMonth)
       .lte('transaction_date', monthEnd),
-    supabase
-      .from('transactions')
-      .select('amount')
-      .eq('user_id', userId)
-      .eq('type', 'income')
-      .eq('is_consolidated', true)
-      .gte('transaction_date', prevYM)
-      .lte('transaction_date', prevEnd),
     // All categories (system + user's own) to resolve parent hierarchy
     supabase
       .from('categories')
@@ -206,14 +182,6 @@ export async function getMonthBudgetSummary(
     if (!cat.parent_id || depth >= 5) return cat
     return rootOf(cat.parent_id, depth + 1)
   }
-
-  // ── Income carryover ──────────────────────────────────────────────────────
-
-  const prevIncomeReceived  = (prevIncomeTxs  || []).reduce((s, t) => s + Math.abs(t.amount), 0)
-  const prevExpConsolidated = (prevExpenseTxs || [])
-    .filter((t) => t.is_consolidated)
-    .reduce((s, t) => s + Math.abs(t.amount), 0)
-  const income_carryover = prevIncomeReceived - prevExpConsolidated
 
   // ── Roll up budgets → root parent level ───────────────────────────────────
 
@@ -320,7 +288,6 @@ export async function getMonthBudgetSummary(
     year_month: yearMonth,
     total_income_planned,
     total_income_received,
-    income_carryover,
     total_budgeted,
     total_consolidated,
     total_pending,

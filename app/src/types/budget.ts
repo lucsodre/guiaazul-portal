@@ -73,7 +73,6 @@ export interface MonthBudgetSummary {
   year_month: string
   total_income_planned: number   // soma dos income_plans ativos
   total_income_received: number  // receitas consolidadas no mês
-  income_carryover: number       // saldo líquido do mês anterior (receita - gastos consolidados)
   total_budgeted: number         // soma dos limites das categorias
   total_consolidated: number     // soma de gastos consolidados (inclui não orçados)
   total_pending: number          // soma de gastos pendentes (inclui não orçados)

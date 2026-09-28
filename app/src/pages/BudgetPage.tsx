@@ -223,13 +223,6 @@ export default function BudgetPage() {
                     <p style={{ fontSize: 13, fontWeight: 600, fontVariantNumeric: 'tabular-nums', color: 'var(--color-income-dark)' }}>{formatBRL(summary.total_income_planned)}</p>
                   </div>
                 </div>
-                {summary.income_carryover !== 0 && (
-                  <p style={{ marginTop: 6, fontSize: 11, fontVariantNumeric: 'tabular-nums', color: summary.income_carryover > 0 ? 'var(--color-income)' : 'var(--color-expense)' }}>
-                    {summary.income_carryover > 0
-                      ? `↑ Saldo do mês anterior: +${formatBRL(summary.income_carryover)}`
-                      : `↓ Déficit do mês anterior: ${formatBRL(Math.abs(summary.income_carryover))}`}
-                  </p>
-                )}
               </div>
             )}
 
